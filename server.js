@@ -130,109 +130,143 @@ function respuestaDespedida() {
 }
 
 // Handlers de flujo
+function respuestaEnvios() {
+  return {
+    messages: [
+      'ENVIOS A DOMICILIO',
+      'Tarifas orientativas:',
+      '- Castellon y Grao: 11 EUR',
+      '- Almazora: 15 EUR',
+      '- Villarreal y Burriana: 18 EUR',
+      '- Benicassim: 20 EUR',
+      '',
+      'Para otras zonas, consulta disponibilidad. Indica direccion y poblacion si quieres que lo confirmemos.'
+    ],
+    options: [
+      { id: 'menu', label: 'Volver al menu principal' },
+      { id: '6', label: 'Hablar con el equipo' }
+    ],
+    estado: 'menu_principal'
+  };
+}
+
+function respuestaHorarios() {
+  return {
+    messages: [INFO_ATELIER],
+    options: [ { id: 'menu', label: 'Volver al menu principal' } ],
+    estado: 'menu_principal'
+  };
+}
+
+function respuestaEscalado() {
+  return {
+    messages: [
+      'Te ponemos en contacto con nuestro equipo. Suelen responder en menos de 15 minutos en horario comercial.',
+      'Mientras tanto, puedes dejarnos aqui tu mensaje.'
+    ],
+    options: [ { id: 'menu', label: 'Volver al menu principal' } ],
+    estado: 'escalado_humano'
+  };
+}
+
 function manejarMenuPrincipal(session, texto) {
-  // Acepta numero o palabras clave
-  if (['1', 'ramos', 'ramo', 'ramo personalizado'].includes(texto)) {
+  // Exacto segun especificacion del usuario
+  if (texto === '1') {
     session.estadoActual = 'ramo_submenu';
     return {
       messages: [
-        'RAMOS PERSONALIZADOS',
-        '¿Que te interesa? Elige una opcion:',
-        '1. Presupuesto y estilo',
-        '2. Entrega o recogida'
+        'Perfecto. ¿Qué tipo de ramo buscas?',
+        '\n' +
+          '1.1  Ramo de cumpleaños o felicitación\n' +
+          '1.2  Ramo romántico\n' +
+          '1.3  Ramo de condolencias\n' +
+          '1.4  Ramo a medida (Susana lo diseña)\n\n' +
+          'Escribe el número.'
       ],
       options: [
-        { id: '1', label: 'Presupuesto y estilo' },
-        { id: '2', label: 'Entrega o recogida' },
-        { id: 'menu', label: 'Volver al menu principal' }
+        { id: '1.1', label: 'Cumpleaños' },
+        { id: '1.2', label: 'Romántico' },
+        { id: '1.3', label: 'Condolencias' },
+        { id: '1.4', label: 'A medida' },
+        { id: 'menu', label: '← Volver al menú' }
       ],
       estado: session.estadoActual
     };
   }
 
-  if (['2', 'bodas', 'eventos', 'boda'].includes(texto)) {
+  if (texto === '2') {
     session.estadoActual = 'bodas_pregunta_fecha';
     session.datosTemporales = {};
     return {
       messages: [
-        'BODAS Y EVENTOS',
-        '¿Que fecha tienes prevista? (ej. 14/09/2026 o "mayo 2027")'
+        'Qué emoción 🌿 Te ayudo a preparar tu consulta de boda.',
+        'Susana diseña cada boda como una pieza única. Te haré 4 preguntas rápidas para que ella pueda preparar una propuesta personalizada.',
+        'Primera pregunta: ¿para qué fecha es la boda? (puedes poner mes/año aproximado, no hace falta día exacto)'
       ],
-      options: [
-        { id: 'volver', label: 'Volver' },
-        { id: 'menu', label: 'Menu principal' }
-      ],
+      options: [ { id: 'menu', label: '← Volver al menú' } ],
       estado: session.estadoActual
     };
   }
 
-  if (['3', 'interiorismo', 'plantas', 'decoracion'].includes(texto)) {
+  if (texto === '3') {
     session.estadoActual = 'interiorismo_submenu';
     return {
       messages: [
-        'INTERIORISMO VEGETAL',
-        'Servicios disponibles:',
-        '- Mantenimiento de plantas en locales y oficinas',
-        '- Diseño de rincones verdes y escaparates',
-        '- Asesoramiento de especies segun luz y espacio'
+        'Trabajamos con plantas exclusivas y diseño botánico para hogares, hoteles, restaurantes y boutiques.',
+        '¿Qué te interesa más?',
+        '\n' +
+          '3.1  Plantas para regalar\n' +
+          '3.2  Plantas para mi hogar\n' +
+          '3.3  Proyecto de interiorismo (hotel, restaurante, oficina)\n'
       ],
       options: [
-        { id: 'menu', label: 'Volver al menu principal' },
-        { id: '5', label: 'Hablar con una persona' }
+        { id: '3.1', label: 'Para regalar' },
+        { id: '3.2', label: 'Para mi hogar' },
+        { id: '3.3', label: 'Proyecto profesional' },
+        { id: 'menu', label: '← Volver al menú' }
       ],
       estado: session.estadoActual
     };
   }
 
-  if (['4', 'envios', 'envío', 'reparto', 'entregas'].includes(texto)) {
-    session.estadoActual = 'envios_submenu';
-    return {
-      messages: [
-        'ENVIOS Y REPARTO',
-        'Tarifas orientativas:',
-        '- Castellon y Grao: 11 EUR',
-        '- Almazora: 15 EUR',
-        '- Villarreal y Burriana: 18 EUR',
-        '- Benicassim: 20 EUR',
-        '',
-        'Para otras zonas consulta disponibilidad.'
-      ],
-      options: [
-        { id: 'menu', label: 'Volver al menu principal' },
-        { id: '5', label: 'Hablar con una persona' }
-      ],
-      estado: session.estadoActual
-    };
+  if (texto === '4') {
+    session.estadoActual = 'menu_principal';
+    return respuestaEnvios();
   }
 
-  if (['5', 'horarios', 'ubicacion', 'ubicación', 'direccion', 'dirección', 'telefono', 'teléfono', 'contacto'].includes(texto)) {
-    return {
-      messages: [INFO_ATELIER],
-      options: [
-        { id: 'menu', label: 'Volver al menu principal' }
-      ],
-      estado: 'info_atelier'
-    };
+  if (texto === '5') {
+    session.estadoActual = 'menu_principal';
+    return respuestaHorarios();
   }
 
-  if (['6', 'persona', 'agente', 'hablar', 'equipo', 'susana'].includes(texto)) {
+  if (texto === '6') {
     session.estadoActual = 'escalado_humano';
-    return {
-      messages: [
-        'Te ponemos en contacto con nuestro equipo. Suelen responder en menos de 15 minutos en horario comercial.',
-        'Mientras tanto, puedes dejarnos aqui tu mensaje.'
-      ],
-      options: [
-        { id: 'menu', label: 'Volver al menu principal' }
-      ],
-      estado: session.estadoActual
-    };
+    return respuestaEscalado();
   }
 
   return mensajeNoEntendido();
 }
 
 function manejarSubmenuRamo(session, texto) {
+  // Elegir tipo de ramo (1.1 a 1.4) conduce a pedir presupuesto
+  const tipos = {
+    '1.1': 'cumpleaños',
+    '1.2': 'romantico',
+    '1.3': 'condolencias',
+    '1.4': 'a_medida'
+  };
+  if (tipos[texto]) {
+    session.datosTemporales.tipoRamo = tipos[texto];
+    session.estadoActual = 'ramo_pregunta_presupuesto';
+    return {
+      messages: [
+        'Genial. ¿Cuál es tu presupuesto aproximado para el ramo? (ej. 35, 50, 80 EUR)'
+      ],
+      options: [ { id: 'menu', label: '← Volver al menú' } ],
+      estado: session.estadoActual
+    };
+  }
+
   if (['1', 'presupuesto', 'precio', 'estilo'].includes(texto)) {
     session.estadoActual = 'ramo_pregunta_presupuesto';
     return {
@@ -427,13 +461,35 @@ function manejarTelefonoBoda(session, texto) {
 }
 
 function manejarSubmenuInteriorismo(session, texto) {
-  // Simplemente redirigimos a humano si pide presupuesto o visita
-  if (/(presupuesto|cita|visita|propuesta)/.test(texto)) {
+  // Opciones 3.1/3.2/3.3 -> escalado con mensaje contextual
+  if (texto === '3.1') {
     session.estadoActual = 'escalado_humano';
     return {
       messages: [
-        'Te ponemos con el equipo para coordinar visita o presupuesto.',
-        'Escribe cualquier detalle (metros, luz, tipo de espacio) o "menu" para volver.'
+        'Plantas para regalar. Te ayudamos a elegir la especie y maceta segun estilo y presupuesto.',
+        'Nuestro equipo te responde en breve. Puedes indicar presupuesto y poblacion.'
+      ],
+      options: [ { id: 'menu', label: 'Menu principal' } ],
+      estado: session.estadoActual
+    };
+  }
+  if (texto === '3.2') {
+    session.estadoActual = 'escalado_humano';
+    return {
+      messages: [
+        'Plantas para tu hogar. Indica luz (mucha, media, poca), metros y estilo deseado.',
+        'Nuestro equipo prepara sugerencias personalizadas.'
+      ],
+      options: [ { id: 'menu', label: 'Menu principal' } ],
+      estado: session.estadoActual
+    };
+  }
+  if (texto === '3.3') {
+    session.estadoActual = 'escalado_humano';
+    return {
+      messages: [
+        'Proyecto profesional (hotel/restaurante/oficina). Indica metros, tipo de espacio y ubicacion.',
+        'Coordinamos visita o presupuesto con el equipo.'
       ],
       options: [ { id: 'menu', label: 'Menu principal' } ],
       estado: session.estadoActual
