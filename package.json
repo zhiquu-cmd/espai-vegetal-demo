@@ -1,0 +1,14 @@
+{
+  "name": "espai-vegetal-demo",
+  "version": "1.0.0",
+  "description": "MVP demo de menu de soporte estilo WhatsApp para Espai Vegetal",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "author": "Espai Vegetal Demo",
+  "license": "MIT"
+}

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Espai Vegetal · Asistente</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+  <!-- Marco de telefono para que parezca demo de movil -->
+  <div class="phone-wrapper">
+
+    <!-- Cabecera estilo WhatsApp con branding floral -->
+    <header class="chat-header">
+      <div class="header-left">
+        <div class="avatar">EV</div>
+        <div class="header-info">
+          <div class="brand-name">Espai Vegetal</div>
+          <div class="brand-status">
+            <span class="status-dot"></span>
+            En linea · responde en minutos
+          </div>
+        </div>
+      </div>
+      <button class="reset-btn" id="resetBtn" title="Reiniciar conversacion">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 4v6h-6"></path>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+      </button>
+    </header>
+
+    <!-- Zona de mensajes -->
+    <main class="chat-body" id="chatBody">
+      <!-- Los mensajes se insertan aqui dinamicamente -->
+    </main>
+
+    <!-- Botones de opciones rapidas -->
+    <div class="quick-options" id="quickOptions"></div>
+
+    <!-- Input para escribir mensajes -->
+    <footer class="chat-input">
+      <input
+        type="text"
+        id="messageInput"
+        placeholder="Escribe un numero (1-4) o 'menu'..."
+        autocomplete="off"
+      />
+      <button id="sendBtn" aria-label="Enviar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M2 21l21-9L2 3v7l15 2-15 2z"/>
+        </svg>
+      </button>
+    </footer>
+
+  </div>
+
+  <!-- Pie tipo "demo" -->
+  <p class="demo-label">Demo MVP · Espai Vegetal · Asistente conversacional</p>
+
+  <script src="/app.js"></script>
+</body>
+</html>
