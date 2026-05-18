@@ -31,7 +31,12 @@ const sessions = new Map();
 
 function getSession(sessionId) {
   if (!sessions.has(sessionId)) {
-    sessions.set(sessionId, { state: 'welcome', startedAt: new Date() });
+    sessions.set(sessionId, {
+      // Nuevo motor: usamos estadoActual y datosTemporales
+      estadoActual: 'menu_principal',
+      datosTemporales: {},
+      startedAt: new Date()
+    });
   }
   return sessions.get(sessionId);
 }
@@ -42,63 +47,29 @@ function getSession(sessionId) {
 const MENU_PRINCIPAL = {
   text:
     "Como podemos ayudarte hoy? Elige una opcion escribiendo su numero:\n\n" +
-    "1. Horarios y ubicacion\n" +
-    "2. Encargos y recogida\n" +
-    "3. Ramos y precios\n" +
-    "4. Hablar con una persona",
+    "1. Ramos personalizados\n" +
+    "2. Bodas y eventos\n" +
+    "3. Interiorismo vegetal\n" +
+    "4. Envios y reparto\n" +
+    "5. Hablar con una persona",
   options: [
-    { id: '1', label: 'Horarios y ubicacion' },
-    { id: '2', label: 'Encargos y recogida' },
-    { id: '3', label: 'Ramos y precios' },
-    { id: '4', label: 'Hablar con una persona' }
+    { id: '1', label: 'Ramos personalizados' },
+    { id: '2', label: 'Bodas y eventos' },
+    { id: '3', label: 'Interiorismo vegetal' },
+    { id: '4', label: 'Envios y reparto' },
+    { id: '5', label: 'Hablar con una persona' }
   ]
 };
 
-const RESPUESTAS = {
-  '1': {
-    text:
-      "HORARIOS Y UBICACION\n\n" +
-      "Atelier principal:\n" +
-      "Lunes a sabado: 9:30 - 14:00 / 17:00 - 20:30\n" +
-      "Domingos: cerrado\n\n" +
-      "Direccion: Castellon de la Plana\n" +
-      "Tienda Plaza Santa Clara abierta tambien por las mañanas.\n\n" +
-      "Telefono: +34 964 205 102",
-    followUp: 'Quieres ver el menu de nuevo? Escribe "menu" o pulsa el boton.'
-  },
-  '2': {
-    text:
-      "ENCARGOS Y RECOGIDA\n\n" +
-      "Aceptamos encargos por WhatsApp con un minimo de 3 horas de antelacion.\n\n" +
-      "Recogida en atelier o entrega a domicilio:\n" +
-      "- Castellon y Grao: 11 EUR\n" +
-      "- Almazora: 15 EUR\n" +
-      "- Villarreal y Burriana: 18 EUR\n" +
-      "- Benicassim: 20 EUR\n\n" +
-      "Para bodas y eventos pide consulta privada.",
-    followUp: 'Quieres ver el menu de nuevo? Escribe "menu" o pulsa el boton.'
-  },
-  '3': {
-    text:
-      "RAMOS Y PRECIOS\n\n" +
-      "Ramo de autor pequeño: desde 35 EUR\n" +
-      "Ramo de autor mediano: desde 55 EUR\n" +
-      "Ramo de autor grande: desde 85 EUR\n" +
-      "Centros de mesa: desde 45 EUR\n" +
-      "Orquideas decoradas: desde 40 EUR\n\n" +
-      "Tambien disponemos de flor preservada y plantas exclusivas.\n" +
-      "Te enviamos fotos por WhatsApp antes de cada entrega.",
-    followUp: 'Quieres ver el menu de nuevo? Escribe "menu" o pulsa el boton.'
-  },
-  '4': {
-    text:
-      "HABLAR CON UNA PERSONA\n\n" +
-      "Te transferimos con nuestro equipo. En horario comercial respondemos en menos de 15 minutos.\n\n" +
-      "Susana o el equipo del atelier te atendera personalmente para ayudarte con tu pedido, boda o consulta especial.\n\n" +
-      "Mientras tanto, puedes dejarnos un mensaje y te respondemos en cuanto estemos disponibles.",
-    followUp: 'Conversacion escalada a un agente humano. Escribe "menu" para volver al menu principal.'
-  }
-};
+// Textos reutilizables
+const INFO_ATELIER =
+  "HORARIOS Y UBICACION\n\n" +
+  "Atelier principal:\n" +
+  "Lunes a sabado: 9:30 - 14:00 / 17:00 - 20:30\n" +
+  "Domingos: cerrado\n\n" +
+  "Direccion: Castellon de la Plana\n" +
+  "Tienda Plaza Santa Clara abierta tambien por las mañanas.\n\n" +
+  "Telefono: +34 964 205 102";
 
 const BIENVENIDA = {
   text:
@@ -111,56 +82,436 @@ const BIENVENIDA = {
 // ---------------------------------------------------------------
 // 3) MOTOR DE CONVERSACION
 // ---------------------------------------------------------------
-// Recibe un mensaje del usuario y devuelve la respuesta del bot.
-function procesarMensaje(session, mensaje) {
-  const texto = (mensaje || '').trim().toLowerCase();
+// Utilidad: limpieza de texto (minusculas y trim)
+function limpiar(texto) {
+  return (texto || '').toString().toLowerCase().trim();
+}
 
-  // Comandos globales
-  if (texto === 'menu' || texto === 'hola' || texto === 'inicio') {
-    session.state = 'menu';
-    return {
-      messages: [MENU_PRINCIPAL.text],
-      options: MENU_PRINCIPAL.options,
-      state: session.state
-    };
-  }
+// Respuestas de conveniencia
+function respuestaMenuPrincipal() {
+  return {
+    messages: [MENU_PRINCIPAL.text],
+    options: MENU_PRINCIPAL.options,
+    estado: 'menu_principal'
+  };
+}
 
-  // Opciones del menu principal
-  if (['1', '2', '3', '4'].includes(texto)) {
-    const respuesta = RESPUESTAS[texto];
-    session.state = texto === '4' ? 'escalado_humano' : 'respuesta';
-    return {
-      messages: [respuesta.text, respuesta.followUp],
-      options: [
-        { id: 'menu', label: 'Volver al menu principal' }
-      ],
-      state: session.state
-    };
-  }
-
-  // Si esta en escalado humano, dejamos pasar texto libre
-  if (session.state === 'escalado_humano') {
-    return {
-      messages: [
-        "Mensaje recibido. Un miembro del equipo te respondera en breve.",
-        "Si quieres volver al menu automatico, escribe \"menu\"."
-      ],
-      options: [
-        { id: 'menu', label: 'Volver al menu principal' }
-      ],
-      state: session.state
-    };
-  }
-
-  // Mensaje no reconocido
+function mensajeNoEntendido() {
   return {
     messages: [
-      "No he entendido tu mensaje. Estas son las opciones disponibles:",
-      MENU_PRINCIPAL.text
+      'No he entendido tu mensaje.',
+      'Puedes elegir una opcion del menu o escribir "menu" para volver.'
     ],
-    options: MENU_PRINCIPAL.options,
-    state: 'menu'
+    options: [
+      { id: 'menu', label: 'Volver al menu principal' }
+    ]
   };
+}
+
+function respuestaDespedida() {
+  return {
+    messages: [
+      'Gracias por tu visita. Cuando quieras, escribe "hola" o "menu" para continuar.',
+      INFO_ATELIER
+    ],
+    options: [
+      { id: 'menu', label: 'Volver al menu principal' }
+    ],
+    estado: 'despedida'
+  };
+}
+
+// Handlers de flujo
+function manejarMenuPrincipal(session, texto) {
+  // Acepta numero o palabras clave
+  if (['1', 'ramos', 'ramo', 'ramo personalizado'].includes(texto)) {
+    session.estadoActual = 'ramo_submenu';
+    return {
+      messages: [
+        'RAMOS PERSONALIZADOS',
+        '¿Que te interesa? Elige una opcion:',
+        '1. Presupuesto y estilo',
+        '2. Entrega o recogida'
+      ],
+      options: [
+        { id: '1', label: 'Presupuesto y estilo' },
+        { id: '2', label: 'Entrega o recogida' },
+        { id: 'menu', label: 'Volver al menu principal' }
+      ],
+      estado: session.estadoActual
+    };
+  }
+
+  if (['2', 'bodas', 'eventos', 'boda'].includes(texto)) {
+    session.estadoActual = 'bodas_pregunta_fecha';
+    session.datosTemporales = {};
+    return {
+      messages: [
+        'BODAS Y EVENTOS',
+        '¿Que fecha tienes prevista? (ej. 14/09/2026 o "mayo 2027")'
+      ],
+      options: [
+        { id: 'volver', label: 'Volver' },
+        { id: 'menu', label: 'Menu principal' }
+      ],
+      estado: session.estadoActual
+    };
+  }
+
+  if (['3', 'interiorismo', 'plantas', 'decoracion'].includes(texto)) {
+    session.estadoActual = 'interiorismo_submenu';
+    return {
+      messages: [
+        'INTERIORISMO VEGETAL',
+        'Servicios disponibles:',
+        '- Mantenimiento de plantas en locales y oficinas',
+        '- Diseño de rincones verdes y escaparates',
+        '- Asesoramiento de especies segun luz y espacio'
+      ],
+      options: [
+        { id: 'menu', label: 'Volver al menu principal' },
+        { id: '5', label: 'Hablar con una persona' }
+      ],
+      estado: session.estadoActual
+    };
+  }
+
+  if (['4', 'envios', 'envío', 'reparto', 'entregas'].includes(texto)) {
+    session.estadoActual = 'envios_submenu';
+    return {
+      messages: [
+        'ENVIOS Y REPARTO',
+        'Tarifas orientativas:',
+        '- Castellon y Grao: 11 EUR',
+        '- Almazora: 15 EUR',
+        '- Villarreal y Burriana: 18 EUR',
+        '- Benicassim: 20 EUR',
+        '',
+        'Para otras zonas consulta disponibilidad.'
+      ],
+      options: [
+        { id: 'menu', label: 'Volver al menu principal' },
+        { id: '5', label: 'Hablar con una persona' }
+      ],
+      estado: session.estadoActual
+    };
+  }
+
+  if (['5', 'persona', 'agente', 'hablar'].includes(texto)) {
+    session.estadoActual = 'escalado_humano';
+    return {
+      messages: [
+        'Te ponemos en contacto con nuestro equipo. Suelen responder en menos de 15 minutos en horario comercial.',
+        'Mientras tanto, puedes dejarnos aqui tu mensaje.'
+      ],
+      options: [
+        { id: 'menu', label: 'Volver al menu principal' }
+      ],
+      estado: session.estadoActual
+    };
+  }
+
+  // atajos utiles
+  if (['horarios', 'ubicacion', 'direccion', 'telefono'].includes(texto)) {
+    return {
+      messages: [INFO_ATELIER],
+      options: [
+        { id: 'menu', label: 'Volver al menu principal' }
+      ],
+      estado: 'info_atelier'
+    };
+  }
+
+  return mensajeNoEntendido();
+}
+
+function manejarSubmenuRamo(session, texto) {
+  if (['1', 'presupuesto', 'precio', 'estilo'].includes(texto)) {
+    session.estadoActual = 'ramo_pregunta_presupuesto';
+    return {
+      messages: [
+        'Perfecto. ¿Cual es tu presupuesto aproximado? (ej. 35, 50, 80 EUR)'
+      ],
+      options: [
+        { id: 'volver', label: 'Volver' },
+        { id: 'menu', label: 'Menu principal' }
+      ],
+      estado: session.estadoActual
+    };
+  }
+  if (['2', 'entrega', 'recogida'].includes(texto)) {
+    session.estadoActual = 'ramo_pregunta_entrega';
+    return {
+      messages: [
+        '¿Entrega a domicilio o recogida en atelier? Escribe "entrega" o "recogida". Si es entrega, indica direccion y poblacion.'
+      ],
+      options: [
+        { id: 'entrega', label: 'Entrega a domicilio' },
+        { id: 'recogida', label: 'Recogida en atelier' },
+        { id: 'menu', label: 'Menu principal' }
+      ],
+      estado: session.estadoActual
+    };
+  }
+  return mensajeNoEntendido();
+}
+
+function manejarPresupuestoRamo(session, texto) {
+  // Extraer primer numero como presupuesto
+  const match = texto.match(/\d{1,4}/);
+  if (!match) {
+    return {
+      messages: [
+        'Puedes indicarme un numero aproximado en EUR? (ej. 45)'
+      ],
+      options: [ { id: 'menu', label: 'Menu principal' } ],
+      estado: session.estadoActual
+    };
+  }
+  const presupuesto = parseInt(match[0], 10);
+  session.datosTemporales.presupuesto = presupuesto;
+  session.estadoActual = 'ramo_pregunta_entrega';
+  return {
+    messages: [
+      `Anotado presupuesto ~ ${presupuesto} EUR.`,
+      '¿Entrega a domicilio o recogida en atelier? Si es entrega, indica direccion y poblacion.'
+    ],
+    options: [
+      { id: 'entrega', label: 'Entrega a domicilio' },
+      { id: 'recogida', label: 'Recogida en atelier' },
+      { id: 'menu', label: 'Menu principal' }
+    ],
+    estado: session.estadoActual
+  };
+}
+
+function manejarEntregaRamo(session, texto) {
+  const esEntrega = texto.includes('entrega');
+  const esRecogida = texto.includes('recogida');
+
+  if (esEntrega) session.datosTemporales.modalidad = 'entrega';
+  if (esRecogida) session.datosTemporales.modalidad = 'recogida';
+
+  // Si es entrega e incluye direccion basica
+  if (session.datosTemporales.modalidad === 'entrega' && /[a-záéíóúñ]+\s+\d+/.test(texto)) {
+    session.datosTemporales.direccion = texto;
+  }
+
+  // Cuando tengamos al menos modalidad, devolvemos resumen y pasamos a humano
+  if (session.datosTemporales.modalidad) {
+    session.estadoActual = 'escalado_humano';
+    const resumen = [
+      'Resumen de tu encargo:',
+      session.datosTemporales.presupuesto ? `- Presupuesto: ~ ${session.datosTemporales.presupuesto} EUR` : null,
+      `- Modalidad: ${session.datosTemporales.modalidad}`,
+      session.datosTemporales.direccion ? `- Direccion: ${session.datosTemporales.direccion}` : null,
+    ].filter(Boolean).join('\n');
+
+    return {
+      messages: [
+        resumen,
+        'Genial. Un miembro del equipo te confirma disponibilidad y opciones de estilo en breve.',
+        'Puedes escribir cualquier detalle extra (color, tipo de flores, fecha/hora) o "menu" para volver.'
+      ],
+      options: [
+        { id: 'menu', label: 'Volver al menu principal' }
+      ],
+      estado: session.estadoActual
+    };
+  }
+
+  // Pedir aclaracion
+  return {
+    messages: [
+      '¿Prefieres entrega a domicilio o recogida en atelier? Escribe "entrega" o "recogida". Si es entrega, añade la direccion.'
+    ],
+    options: [
+      { id: 'entrega', label: 'Entrega a domicilio' },
+      { id: 'recogida', label: 'Recogida en atelier' },
+      { id: 'menu', label: 'Menu principal' }
+    ],
+    estado: session.estadoActual
+  };
+}
+
+function manejarFechaBoda(session, texto) {
+  // Aceptamos algo que parezca fecha/mes/año
+  if (!/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)/.test(texto)) {
+    return {
+      messages: [
+        '¿Me indicas la fecha aproximada? (ej. 14/09/2026 o "mayo 2027")'
+      ],
+      options: [ { id: 'menu', label: 'Menu principal' } ],
+      estado: session.estadoActual
+    };
+  }
+  session.datosTemporales.fechaBoda = texto;
+  session.estadoActual = 'bodas_pregunta_invitados';
+  return {
+    messages: [
+      'Gracias. ¿Numero aproximado de invitados?'
+    ],
+    options: [ { id: 'volver', label: 'Volver' }, { id: 'menu', label: 'Menu' } ],
+    estado: session.estadoActual
+  };
+}
+
+function manejarInvitadosBoda(session, texto) {
+  const match = texto.match(/\d{1,4}/);
+  if (!match) {
+    return {
+      messages: [ '¿Cuantos invitados aproximadamente? (ej. 80, 120)' ],
+      options: [ { id: 'menu', label: 'Menu principal' } ],
+      estado: session.estadoActual
+    };
+  }
+  session.datosTemporales.invitados = parseInt(match[0], 10);
+  session.estadoActual = 'bodas_pregunta_lugar';
+  return {
+    messages: [ '¿En que ciudad o lugar se celebra?' ],
+    options: [ { id: 'volver', label: 'Volver' }, { id: 'menu', label: 'Menu' } ],
+    estado: session.estadoActual
+  };
+}
+
+function manejarLugarBoda(session, texto) {
+  if (!texto || texto.length < 3) {
+    return {
+      messages: [ 'Indica la ciudad o el espacio aproximado (ej. Castellon, Masia X).'],
+      options: [ { id: 'menu', label: 'Menu principal' } ],
+      estado: session.estadoActual
+    };
+  }
+  session.datosTemporales.lugar = texto;
+  session.estadoActual = 'bodas_pregunta_telefono';
+  return {
+    messages: [ 'Perfecto. ¿Me das un telefono de contacto?' ],
+    options: [ { id: 'volver', label: 'Volver' }, { id: 'menu', label: 'Menu' } ],
+    estado: session.estadoActual
+  };
+}
+
+function manejarTelefonoBoda(session, texto) {
+  const tel = (texto || '').replace(/[^\d+]/g, '');
+  if (!/\d{6,}/.test(tel)) {
+    return {
+      messages: [ '¿Puedes escribir un telefono valido? (ej. 612345678)' ],
+      options: [ { id: 'menu', label: 'Menu principal' } ],
+      estado: session.estadoActual
+    };
+  }
+  session.datosTemporales.telefono = tel;
+  session.estadoActual = 'escalado_humano';
+  const resumen = [
+    'Gracias. Hemos registrado tu solicitud:',
+    `- Fecha: ${session.datosTemporales.fechaBoda}`,
+    `- Invitados: ${session.datosTemporales.invitados}`,
+    `- Lugar: ${session.datosTemporales.lugar}`,
+    `- Telefono: ${session.datosTemporales.telefono}`
+  ].join('\n');
+  return {
+    messages: [
+      resumen,
+      'Nuestro equipo te contactara para una propuesta personalizada. Puedes escribir detalles extra o "menu" para volver.'
+    ],
+    options: [ { id: 'menu', label: 'Volver al menu principal' } ],
+    estado: session.estadoActual
+  };
+}
+
+function manejarSubmenuInteriorismo(session, texto) {
+  // Simplemente redirigimos a humano si pide presupuesto o visita
+  if (/(presupuesto|cita|visita|propuesta)/.test(texto)) {
+    session.estadoActual = 'escalado_humano';
+    return {
+      messages: [
+        'Te ponemos con el equipo para coordinar visita o presupuesto.',
+        'Escribe cualquier detalle (metros, luz, tipo de espacio) o "menu" para volver.'
+      ],
+      options: [ { id: 'menu', label: 'Menu principal' } ],
+      estado: session.estadoActual
+    };
+  }
+  return {
+    messages: [
+      '¿Quieres un presupuesto o agendar una visita?'
+    ],
+    options: [ { id: 'menu', label: 'Menu principal' }, { id: '5', label: 'Hablar con una persona' } ],
+    estado: session.estadoActual
+  };
+}
+
+function manejarSubmenuEnvios(session, texto) {
+  if (['menu', 'volver'].includes(texto)) return respuestaMenuPrincipal();
+  return {
+    messages: [
+      'Si necesitas saber si llegamos a tu zona concreta, escribe la poblacion o codigo postal.'
+    ],
+    options: [ { id: 'menu', label: 'Menu principal' }, { id: '5', label: 'Hablar con una persona' } ],
+    estado: session.estadoActual
+  };
+}
+
+function manejarEscaladoHumano(session, texto) {
+  // Texto libre, mantenemos estado y damos acuse
+  return {
+    messages: [
+      'Mensaje recibido. Un miembro del equipo te respondera en breve.',
+      'Escribe "menu" para volver al menu principal cuando quieras.'
+    ],
+    options: [ { id: 'menu', label: 'Volver al menu principal' } ],
+    estado: session.estadoActual
+  };
+}
+
+// Recibe un mensaje del usuario y devuelve la respuesta del bot.
+function procesarMensaje(session, mensaje) {
+  const texto = limpiar(mensaje);
+
+  // COMANDOS GLOBALES
+  if (['menu', 'inicio', 'hola', 'volver'].includes(texto)) {
+    session.estadoActual = 'menu_principal';
+    session.datosTemporales = {};
+    return respuestaMenuPrincipal();
+  }
+  if (['salir', 'cancelar'].includes(texto)) {
+    session.estadoActual = 'despedida';
+    return respuestaDespedida();
+  }
+
+  // ENRUTAMIENTO POR ESTADO
+  switch (session.estadoActual) {
+    case 'menu_principal':
+      return manejarMenuPrincipal(session, texto);
+    case 'ramo_submenu':
+      return manejarSubmenuRamo(session, texto);
+    case 'ramo_pregunta_presupuesto':
+      return manejarPresupuestoRamo(session, texto);
+    case 'ramo_pregunta_entrega':
+      return manejarEntregaRamo(session, texto);
+    case 'bodas_pregunta_fecha':
+      return manejarFechaBoda(session, texto);
+    case 'bodas_pregunta_invitados':
+      return manejarInvitadosBoda(session, texto);
+    case 'bodas_pregunta_lugar':
+      return manejarLugarBoda(session, texto);
+    case 'bodas_pregunta_telefono':
+      return manejarTelefonoBoda(session, texto);
+    case 'interiorismo_submenu':
+      return manejarSubmenuInteriorismo(session, texto);
+    case 'envios_submenu':
+      return manejarSubmenuEnvios(session, texto);
+    case 'escalado_humano':
+      return manejarEscaladoHumano(session, texto);
+    default:
+      const fallback = mensajeNoEntendido();
+      const menu = respuestaMenuPrincipal();
+      return {
+        messages: [...fallback.messages, ...menu.messages],
+        options: menu.options,
+        estado: 'menu_principal'
+      };
+  }
 }
 
 // ---------------------------------------------------------------
@@ -171,12 +522,12 @@ function procesarMensaje(session, mensaje) {
 app.post('/start', (req, res) => {
   const { sessionId } = req.body;
   const session = getSession(sessionId);
-  session.state = 'menu';
+  session.estadoActual = 'menu_principal';
 
   res.json({
     messages: [BIENVENIDA.text, MENU_PRINCIPAL.text],
     options: MENU_PRINCIPAL.options,
-    state: session.state
+    estado: session.estadoActual
   });
 });
 
