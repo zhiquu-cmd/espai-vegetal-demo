@@ -248,129 +248,95 @@ function manejarMenuPrincipal(session, texto) {
 }
 
 function manejarSubmenuRamo(session, texto) {
-  // Elegir tipo de ramo (1.1 a 1.4) conduce a pedir presupuesto
+  // Especificación: 1.1-1.4 definen tipoRamo y pasan a presupuesto con opciones A-D
   const tipos = {
     '1.1': 'cumpleaños',
-    '1.2': 'romantico',
+    '1.2': 'romántico',
     '1.3': 'condolencias',
-    '1.4': 'a_medida'
+    '1.4': 'a medida'
   };
+
   if (tipos[texto]) {
     session.datosTemporales.tipoRamo = tipos[texto];
+  }
+
+  if (session.datosTemporales.tipoRamo) {
     session.estadoActual = 'ramo_pregunta_presupuesto';
     return {
       messages: [
-        'Genial. ¿Cuál es tu presupuesto aproximado para el ramo? (ej. 35, 50, 80 EUR)'
+        'Genial. ¿Qué presupuesto manejas para el ramo?',
+        '\n' +
+          'A) 35-50 €  (ramo pequeño)\n' +
+          'B) 50-80 €  (ramo mediano)\n' +
+          'C) 80-150 € (ramo grande)\n' +
+          'D) Sin límite, quiero algo especial\n'
       ],
-      options: [ { id: 'menu', label: '← Volver al menú' } ],
+      options: [
+        { id: 'A', label: '35-50 €' },
+        { id: 'B', label: '50-80 €' },
+        { id: 'C', label: '80-150 €' },
+        { id: 'D', label: 'Algo especial' }
+      ],
       estado: session.estadoActual
     };
   }
 
-  if (['1', 'presupuesto', 'precio', 'estilo'].includes(texto)) {
-    session.estadoActual = 'ramo_pregunta_presupuesto';
-    return {
-      messages: [
-        'Perfecto. ¿Cual es tu presupuesto aproximado? (ej. 35, 50, 80 EUR)'
-      ],
-      options: [
-        { id: 'volver', label: 'Volver' },
-        { id: 'menu', label: 'Menu principal' }
-      ],
-      estado: session.estadoActual
-    };
-  }
-  if (['2', 'entrega', 'recogida'].includes(texto)) {
-    session.estadoActual = 'ramo_pregunta_entrega';
-    return {
-      messages: [
-        '¿Entrega a domicilio o recogida en atelier? Escribe "entrega" o "recogida". Si es entrega, indica direccion y poblacion.'
-      ],
-      options: [
-        { id: 'entrega', label: 'Entrega a domicilio' },
-        { id: 'recogida', label: 'Recogida en atelier' },
-        { id: 'menu', label: 'Menu principal' }
-      ],
-      estado: session.estadoActual
-    };
-  }
   return mensajeNoEntendido();
 }
 
 function manejarPresupuestoRamo(session, texto) {
-  // Extraer primer numero como presupuesto
-  const match = texto.match(/\d{1,4}/);
-  if (!match) {
-    return {
-      messages: [
-        'Puedes indicarme un numero aproximado en EUR? (ej. 45)'
-      ],
-      options: [ { id: 'menu', label: 'Menu principal' } ],
-      estado: session.estadoActual
-    };
-  }
-  const presupuesto = parseInt(match[0], 10);
-  session.datosTemporales.presupuesto = presupuesto;
+  // Guardamos la seleccion tal cual (A/B/C/D o texto libre)
+  session.datosTemporales.presupuesto = texto;
   session.estadoActual = 'ramo_pregunta_entrega';
   return {
     messages: [
-      `Anotado presupuesto ~ ${presupuesto} EUR.`,
-      '¿Entrega a domicilio o recogida en atelier? Si es entrega, indica direccion y poblacion.'
+      'Perfecto. Última pregunta: ¿quieres recogerlo en tienda o entrega a domicilio?',
+      '\n' +
+        '1) Recoger en la tienda (Castellón)\n' +
+        '2) Entrega a domicilio\n'
     ],
     options: [
-      { id: 'entrega', label: 'Entrega a domicilio' },
-      { id: 'recogida', label: 'Recogida en atelier' },
-      { id: 'menu', label: 'Menu principal' }
+      { id: 'recoger', label: 'Recoger en tienda' },
+      { id: 'domicilio', label: 'Entrega a domicilio' }
     ],
     estado: session.estadoActual
   };
 }
 
 function manejarEntregaRamo(session, texto) {
-  const esEntrega = texto.includes('entrega');
-  const esRecogida = texto.includes('recogida');
+  // Aceptar ids de botones o atajos numericos
+  let entrega = texto;
+  if (texto === '1') entrega = 'recoger';
+  if (texto === '2') entrega = 'domicilio';
 
-  if (esEntrega) session.datosTemporales.modalidad = 'entrega';
-  if (esRecogida) session.datosTemporales.modalidad = 'recogida';
+  session.datosTemporales.entrega = entrega;
+  session.estadoActual = 'escalado_humano';
 
-  // Si es entrega e incluye direccion basica
-  if (session.datosTemporales.modalidad === 'entrega' && /[a-záéíóúñ]+\s+\d+/.test(texto)) {
-    session.datosTemporales.direccion = texto;
-  }
+  // Mapear presupuesto si viene como A/B/C/D a texto humano
+  const mapaPres = {
+    'a': '35-50 € (ramo pequeño)',
+    'b': '50-80 € (ramo mediano)',
+    'c': '80-150 € (ramo grande)',
+    'd': 'Sin límite (algo especial)'
+  };
+  const presKey = (session.datosTemporales.presupuesto || '').toString().trim().toLowerCase();
+  const presupuestoTexto = mapaPres[presKey] || session.datosTemporales.presupuesto;
 
-  // Cuando tengamos al menos modalidad, devolvemos resumen y pasamos a humano
-  if (session.datosTemporales.modalidad) {
-    session.estadoActual = 'escalado_humano';
-    const resumen = [
-      'Resumen de tu encargo:',
-      session.datosTemporales.presupuesto ? `- Presupuesto: ~ ${session.datosTemporales.presupuesto} EUR` : null,
-      `- Modalidad: ${session.datosTemporales.modalidad}`,
-      session.datosTemporales.direccion ? `- Direccion: ${session.datosTemporales.direccion}` : null,
-    ].filter(Boolean).join('\n');
+  const resumen = [
+    '¡Genial! 🌸 Aquí tienes el resumen de tu pedido:',
+    '',
+    `• Tipo de ramo: ${session.datosTemporales.tipoRamo || '-'}`,
+    `• Presupuesto: ${presupuestoTexto || '-'}`,
+    `• Entrega: ${session.datosTemporales.entrega || '-'}`
+  ].join('\n');
 
-    return {
-      messages: [
-        resumen,
-        'Genial. Un miembro del equipo te confirma disponibilidad y opciones de estilo en breve.',
-        'Puedes escribir cualquier detalle extra (color, tipo de flores, fecha/hora) o "menu" para volver.'
-      ],
-      options: [
-        { id: 'menu', label: 'Volver al menu principal' }
-      ],
-      estado: session.estadoActual
-    };
-  }
-
-  // Pedir aclaracion
   return {
     messages: [
-      '¿Prefieres entrega a domicilio o recogida en atelier? Escribe "entrega" o "recogida". Si es entrega, añade la direccion.'
+      resumen,
+      'Te paso ahora con el equipo. En menos de 15 minutos te enviarán fotos de propuestas reales por WhatsApp para que elijas la que más te guste 💚',
+      'Si quieres adelantar algo, escríbenos aquí lo que tengas en mente (colores, ocasión, mensaje para la tarjeta...)'
     ],
-    options: [
-      { id: 'entrega', label: 'Entrega a domicilio' },
-      { id: 'recogida', label: 'Recogida en atelier' },
-      { id: 'menu', label: 'Menu principal' }
-    ],
+    options: [ { id: 'menu', label: '← Volver al menú' } ],
     estado: session.estadoActual
   };
 }
