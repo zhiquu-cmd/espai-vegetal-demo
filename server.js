@@ -342,86 +342,75 @@ function manejarEntregaRamo(session, texto) {
 }
 
 function manejarFechaBoda(session, texto) {
-  // Aceptamos algo que parezca fecha/mes/año
-  if (!/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)/.test(texto)) {
-    return {
-      messages: [
-        '¿Me indicas la fecha aproximada? (ej. 14/09/2026 o "mayo 2027")'
-      ],
-      options: [ { id: 'menu', label: 'Menu principal' } ],
-      estado: session.estadoActual
-    };
-  }
+  // Según especificación: guardar tal cual y avanzar
   session.datosTemporales.fechaBoda = texto;
   session.estadoActual = 'bodas_pregunta_invitados';
   return {
     messages: [
-      'Gracias. ¿Numero aproximado de invitados?'
+      `Anotado: ${texto} ✨`,
+      'Segunda pregunta: ¿cuántos invitados aproximadamente?'
     ],
-    options: [ { id: 'volver', label: 'Volver' }, { id: 'menu', label: 'Menu' } ],
     estado: session.estadoActual
   };
 }
 
 function manejarInvitadosBoda(session, texto) {
-  const match = texto.match(/\d{1,4}/);
-  if (!match) {
-    return {
-      messages: [ '¿Cuantos invitados aproximadamente? (ej. 80, 120)' ],
-      options: [ { id: 'menu', label: 'Menu principal' } ],
-      estado: session.estadoActual
-    };
-  }
-  session.datosTemporales.invitados = parseInt(match[0], 10);
+  session.datosTemporales.invitados = texto;
   session.estadoActual = 'bodas_pregunta_lugar';
   return {
-    messages: [ '¿En que ciudad o lugar se celebra?' ],
-    options: [ { id: 'volver', label: 'Volver' }, { id: 'menu', label: 'Menu' } ],
+    messages: [
+      `Perfecto, ${texto} invitados.`,
+      '¿Dónde se celebra? (ciudad o nombre del lugar si lo sabes)'
+    ],
     estado: session.estadoActual
   };
 }
 
 function manejarLugarBoda(session, texto) {
-  if (!texto || texto.length < 3) {
-    return {
-      messages: [ 'Indica la ciudad o el espacio aproximado (ej. Castellon, Masia X).'],
-      options: [ { id: 'menu', label: 'Menu principal' } ],
-      estado: session.estadoActual
-    };
-  }
   session.datosTemporales.lugar = texto;
   session.estadoActual = 'bodas_pregunta_telefono';
   return {
-    messages: [ 'Perfecto. ¿Me das un telefono de contacto?' ],
-    options: [ { id: 'volver', label: 'Volver' }, { id: 'menu', label: 'Menu' } ],
+    messages: [
+      `Anotado: ${texto} 🌿`,
+      'Última pregunta: ¿en qué número de WhatsApp prefieres que Susana te contacte?'
+    ],
     estado: session.estadoActual
   };
 }
 
-function manejarTelefonoBoda(session, texto) {
-  const tel = (texto || '').replace(/[^\d+]/g, '');
-  if (!/\d{6,}/.test(tel)) {
-    return {
-      messages: [ '¿Puedes escribir un telefono valido? (ej. 612345678)' ],
-      options: [ { id: 'menu', label: 'Menu principal' } ],
-      estado: session.estadoActual
-    };
+// En produccion, esta funcion enviaria un email/Slack/WhatsApp Business
+function notificarAlEquipo(payload) {
+  try {
+    console.log('[NOTIFICACION]', JSON.stringify(payload, null, 2));
+  } catch (e) {
+    console.log('[NOTIFICACION]', payload);
   }
-  session.datosTemporales.telefono = tel;
+}
+
+function manejarTelefonoBoda(session, texto) {
+  session.datosTemporales.telefono = texto;
   session.estadoActual = 'escalado_humano';
-  const resumen = [
-    'Gracias. Hemos registrado tu solicitud:',
-    `- Fecha: ${session.datosTemporales.fechaBoda}`,
-    `- Invitados: ${session.datosTemporales.invitados}`,
-    `- Lugar: ${session.datosTemporales.lugar}`,
-    `- Telefono: ${session.datosTemporales.telefono}`
+
+  notificarAlEquipo({
+    tipo: 'Nueva consulta de boda',
+    datos: session.datosTemporales
+  });
+
+  const bloque = [
+    `📅 Fecha: ${session.datosTemporales.fechaBoda}`,
+    `👥 Invitados: ${session.datosTemporales.invitados}`,
+    `📍 Lugar: ${session.datosTemporales.lugar}`,
+    `📱 Contacto: ${session.datosTemporales.telefono}`
   ].join('\n');
+
   return {
     messages: [
-      resumen,
-      'Nuestro equipo te contactara para una propuesta personalizada. Puedes escribir detalles extra o "menu" para volver.'
+      '¡Listo! 💚 Aquí tienes el resumen:',
+      `\n${bloque}\n`,
+      'Susana revisará tu consulta personalmente y te contactará en menos de 2 horas con una propuesta inicial.',
+      'Mientras tanto, si quieres ir compartiendo ideas, fotos de inspiración o paleta de colores, escríbelas aquí 🌸'
     ],
-    options: [ { id: 'menu', label: 'Volver al menu principal' } ],
+    options: [ { id: 'menu', label: '← Volver al menú' } ],
     estado: session.estadoActual
   };
 }
