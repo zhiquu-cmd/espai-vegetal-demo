@@ -71,7 +71,15 @@ function renderOptions(options) {
     const btn = document.createElement('button');
     btn.className = 'option-btn' + (idx === 0 && opt.id === 'menu' ? ' primary' : '');
     btn.textContent = opt.label;
-    btn.addEventListener('click', () => sendMessage(opt.id));
+    btn.addEventListener('click', () => {
+      if (opt.tipo === 'externo' && opt.url) {
+        window.open(opt.url, '_blank', 'noopener');
+        // feedback opcional en el chat
+        addBubble('Abriendo: ' + opt.url, 'bot');
+      } else {
+        sendMessage(opt.id);
+      }
+    });
     quickOptions.appendChild(btn);
   });
 }

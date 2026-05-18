@@ -35,6 +35,8 @@ function getSession(sessionId) {
       // Nuevo motor: usamos estadoActual y datosTemporales
       estadoActual: 'menu_principal',
       datosTemporales: {},
+      sessionId,
+      historial: [],
       startedAt: new Date()
     });
   }
@@ -45,24 +47,23 @@ function getSession(sessionId) {
 // 2) CONTENIDO DEL BOT (textos reales de la floristeria)
 // ---------------------------------------------------------------
 const MENU_PRINCIPAL = {
-  text:
-    "¿En qué podemos ayudarte? Elige una opción:",
+  text: '¿Qué buscas hoy?',
   options: [
-    { id: '1', label: 'Ramo o regalo' },
-    { id: '2', label: 'Bodas y eventos' },
-    { id: '3', label: 'Plantas' },
-    { id: '4', label: 'Envíos' },
-    { id: '5', label: 'Horarios y contacto' },
-    { id: '6', label: 'Hablar con el equipo' }
+    { id: '1', label: '🌸 Comprar flores' },
+    { id: '2', label: '🌿 Comprar planta' },
+    { id: '3', label: '🎁 Regalo especial' },
+    { id: '4', label: '💒 Bodas y eventos' },
+    { id: '5', label: '🏛️ Interiorismo' },
+    { id: '6', label: 'ℹ️ Info y contacto' }
   ],
   long:
     "\n" +
-    "1️⃣  Encargar un ramo o regalo\n" +
-    "2️⃣  Bodas y eventos\n" +
-    "3️⃣  Plantas e interiorismo botánico\n" +
-    "4️⃣  Envíos a domicilio\n" +
-    "5️⃣  Horarios, ubicación y contacto\n" +
-    "6️⃣  Hablar con Susana o el equipo\n\n" +
+    "1️⃣  Comprar flores o un ramo\n" +
+    "2️⃣  Comprar una planta\n" +
+    "3️⃣  Regalo para una ocasión especial\n" +
+    "4️⃣  Bodas y eventos (consulta personalizada)\n" +
+    "5️⃣  Interiorismo botánico (proyecto profesional)\n" +
+    "6️⃣  Envíos, horarios y contacto\n\n" +
     "Escribe el número o pulsa un botón."
 };
 
@@ -122,14 +123,30 @@ function respuestaMenuPrincipal() {
   };
 }
 
+function respuestaAyuda() {
+  return {
+    messages: [
+      '🌸 AYUDA RÁPIDA',
+      '\n' +
+        'Comandos que puedes usar en cualquier momento:\n' +
+        "• 'menu' → volver al menú principal\n" +
+        "• 'salir' → terminar conversación\n" +
+        "• 'ayuda' → ver esta ayuda\n\n" +
+        'O escribe directamente lo que necesitas y te ayudo.'
+    ],
+    options: [ { id: 'menu', label: '← Ver menú' } ],
+    estado: 'menu_principal'
+  };
+}
+
 function mensajeNoEntendido() {
   return {
     messages: [
-      'No he entendido tu mensaje.',
-      'Puedes elegir una opcion del menu o escribir "menu" para volver.'
+      'Disculpa, no he entendido tu mensaje 🌿',
+      "Puedes escribir 'menu' para ver todas las opciones disponibles."
     ],
     options: [
-      { id: 'menu', label: 'Volver al menu principal' }
+      { id: 'menu', label: '← Ver menú' }
     ]
   };
 }
@@ -137,17 +154,28 @@ function mensajeNoEntendido() {
 function respuestaDespedida() {
   return {
     messages: [
-      'Gracias por tu visita. Cuando quieras, escribe "hola" o "menu" para continuar.',
-      INFO_ATELIER
-    ],
-    options: [
-      { id: 'menu', label: 'Volver al menu principal' }
+      'Gracias por contactar con Espai Vegetal 🌿',
+      "Estamos aquí cuando nos necesites. Escribe 'hola' para volver a empezar."
     ],
     estado: 'despedida'
   };
 }
 
 // Handlers de flujo
+function respuestaConEnlace({ texto, url, etiquetaBoton, extra = null }) {
+  const msgs = [texto];
+  if (extra) msgs.push(extra);
+  msgs.push('💳 Pago seguro online · Envío en 24h');
+  return {
+    messages: msgs,
+    options: [
+      { id: 'comprar', label: etiquetaBoton, url, tipo: 'externo' },
+      { id: 'menu', label: '← Volver al menú' }
+    ],
+    estado: 'menu_principal'
+  };
+}
+
 function respuestaEnvios() {
   return {
     messages: [
@@ -170,11 +198,7 @@ function respuestaEnvios() {
 
 function respuestaHorarios() {
   return {
-    messages: [
-      INFO_ATELIER,
-      `Web: ${ENLACES.catalogoGeneral}`,
-      `WhatsApp: ${ENLACES.whatsapp}`
-    ],
+    messages: [INFO_ATELIER, `Web: ${ENLACES.catalogoGeneral}`, `WhatsApp: ${ENLACES.whatsapp}`],
     options: [ { id: 'menu', label: 'Volver al menu principal' } ],
     estado: 'menu_principal'
   };
@@ -192,24 +216,23 @@ function respuestaEscalado() {
 }
 
 function manejarMenuPrincipal(session, texto) {
-  // Exacto segun especificacion del usuario
+  // Según nuevo embudo
   if (texto === '1') {
-    session.estadoActual = 'ramo_submenu';
+    session.estadoActual = 'flores_submenu';
     return {
       messages: [
-        'Perfecto. ¿Qué tipo de ramo buscas?',
+        'Perfecto 🌸 ¿Qué tipo de flores prefieres?',
         '\n' +
-          '1.1  Ramo de cumpleaños o felicitación\n' +
-          '1.2  Ramo romántico\n' +
-          '1.3  Ramo de condolencias\n' +
-          '1.4  Ramo a medida (Susana lo diseña)\n\n' +
-          'Escribe el número.'
+          '1.1  Flores naturales frescas\n' +
+          '1.2  Flores preservadas (duran meses)\n' +
+          '1.3  Flores artificiales (sin mantenimiento)\n' +
+          '1.4  No sé, enséñame lo más vendido\n'
       ],
       options: [
-        { id: '1.1', label: 'Cumpleaños' },
-        { id: '1.2', label: 'Romántico' },
-        { id: '1.3', label: 'Condolencias' },
-        { id: '1.4', label: 'A medida' },
+        { id: '1.1', label: 'Naturales' },
+        { id: '1.2', label: 'Preservadas' },
+        { id: '1.3', label: 'Artificiales' },
+        { id: '1.4', label: 'Lo más vendido' },
         { id: 'menu', label: '← Volver al menú' }
       ],
       estado: session.estadoActual
@@ -217,54 +240,78 @@ function manejarMenuPrincipal(session, texto) {
   }
 
   if (texto === '2') {
-    session.estadoActual = 'bodas_pregunta_fecha';
-    session.datosTemporales = {};
-    return {
-      messages: [
-        'Qué emoción 🌿 Te ayudo a preparar tu consulta de boda.',
-        'Susana diseña cada boda como una pieza única. Te haré 4 preguntas rápidas para que ella pueda preparar una propuesta personalizada.',
-        'Primera pregunta: ¿para qué fecha es la boda? (puedes poner mes/año aproximado, no hace falta día exacto)'
-      ],
-      options: [ { id: 'menu', label: '← Volver al menú' } ],
-      estado: session.estadoActual
-    };
+    // Link directo a plantas
+    return respuestaConEnlace({
+      texto:
+        '🌿 Tenemos plantas de interior, decorativas y exclusivas, todas con asesoramiento sobre cuidados. Mira el catálogo y compra online:',
+      url: ENLACES.plantas,
+      etiquetaBoton: 'Ver todas las plantas →',
+      extra: "Si tienes dudas sobre qué planta encaja con tu espacio, escribe 'ayuda' y te asesoramos personalmente."
+    });
   }
 
   if (texto === '3') {
-    session.estadoActual = 'interiorismo_submenu';
+    session.estadoActual = 'regalo_submenu';
     return {
       messages: [
-        'Trabajamos con plantas exclusivas y diseño botánico para hogares, hoteles, restaurantes y boutiques.',
-        '¿Qué te interesa más?',
-        '\n' +
-          '3.1  Plantas para regalar\n' +
-          '3.2  Plantas para mi hogar\n' +
-          '3.3  Proyecto de interiorismo (hotel, restaurante, oficina)\n',
-        `Catálogo de plantas: ${ENLACES.plantas} · Accesorios: ${ENLACES.accesorios}`
+        '🎁 ¿Para qué ocasión es el regalo?'
       ],
       options: [
-        { id: '3.1', label: 'Para regalar' },
-        { id: '3.2', label: 'Para mi hogar' },
-        { id: '3.3', label: 'Proyecto profesional' },
-        { id: 'menu', label: '← Volver al menú' }
+        { id: '3.1', label: 'Cumpleaños' },
+        { id: '3.2', label: 'Aniversario o pareja' },
+        { id: '3.3', label: 'Día de la Madre' },
+        { id: '3.4', label: 'Condolencias' },
+        { id: '3.5', label: 'Solo porque sí 💚' },
+        { id: 'menu', label: '← Volver' }
       ],
       estado: session.estadoActual
     };
   }
 
   if (texto === '4') {
-    session.estadoActual = 'menu_principal';
-    return respuestaEnvios();
+    // BODAS formulario conversacional
+    session.estadoActual = 'bodas_pregunta_fecha';
+    return {
+      messages: [
+        'Qué emoción 🌿',
+        'Las bodas son siempre proyectos a medida. Susana diseña cada una como una pieza única.',
+        'Te haré 4 preguntas rápidas y ella te contactará personalmente con una propuesta.',
+        'Primera pregunta: ¿para qué fecha es la boda?'
+      ],
+      options: [ { id: 'menu', label: '← Cancelar y volver' } ],
+      estado: session.estadoActual
+    };
   }
 
   if (texto === '5') {
-    session.estadoActual = 'menu_principal';
-    return respuestaHorarios();
+    // INTERIORISMO: escalar a humano con CTA WhatsApp
+    session.estadoActual = 'escalado_humano';
+    return {
+      messages: [
+        '🏛️ Diseñamos proyectos de interiorismo botánico para hoteles, restaurantes, boutiques y oficinas.',
+        'Susana hace una visita al espacio, propone un diseño a medida y se encarga del mantenimiento si lo necesitas.',
+        'Te paso con ella para concretar una primera reunión sin compromiso.'
+      ],
+      options: [
+        { id: 'whatsapp', label: 'Hablar por WhatsApp →', url: ENLACES.whatsapp, tipo: 'externo' },
+        { id: 'menu', label: '← Volver al menú' }
+      ],
+      estado: session.estadoActual
+    };
   }
 
   if (texto === '6') {
-    session.estadoActual = 'escalado_humano';
-    return respuestaEscalado();
+    session.estadoActual = 'info_submenu';
+    return {
+      messages: ['¿Qué información necesitas?'],
+      options: [
+        { id: '6.1', label: '🚚 Envíos y zonas' },
+        { id: '6.2', label: '🕐 Horarios y ubicación' },
+        { id: '6.3', label: '📱 Contacto directo' },
+        { id: 'menu', label: '← Volver' }
+      ],
+      estado: session.estadoActual
+    };
   }
 
   return mensajeNoEntendido();
@@ -305,6 +352,149 @@ function manejarSubmenuRamo(session, texto) {
     };
   }
 
+  return mensajeNoEntendido();
+}
+
+// Nuevo: FLORES → embudo a tienda
+function manejarSubmenuFlores(session, texto) {
+  if (texto === '1.1') {
+    return respuestaConEnlace({
+      texto:
+        '🌸 Nuestras flores naturales son frescas, escogidas a mano cada mañana. Catálogo completo con compra online:',
+      url: ENLACES.flores.naturales || ENLACES.floresNaturales || ENLACES.catalogoGeneral,
+      etiquetaBoton: 'Ver flores naturales →'
+    });
+  }
+  if (texto === '1.2') {
+    return respuestaConEnlace({
+      texto:
+        '💐 Las flores preservadas son una de nuestras especialidades. Duran meses sin agua y son perfectas como regalo duradero:',
+      url: ENLACES.flores.secas || ENLACES.floresPreservadas || ENLACES.catalogoGeneral,
+      etiquetaBoton: 'Ver flores preservadas →'
+    });
+  }
+  if (texto === '1.3') {
+    return respuestaConEnlace({
+      texto: '🌿 Belleza sin mantenimiento. Calidad indistinguible de las naturales:',
+      url: ENLACES.flores.artificiales || ENLACES.floresArtificiales || ENLACES.catalogoGeneral,
+      etiquetaBoton: 'Ver flores artificiales →'
+    });
+  }
+  if (texto === '1.4') {
+    return respuestaConEnlace({
+      texto: '✨ Los favoritos de nuestros clientes este mes:',
+      url: ENLACES.masVendidos,
+      etiquetaBoton: 'Ver más vendidos →'
+    });
+  }
+  return mensajeNoEntendido();
+}
+
+// Nuevo: REGALO → tienda o humano
+function manejarSubmenuRegalo(session, texto) {
+  if (texto === '3.1') {
+    return respuestaConEnlace({
+      texto:
+        '🎂 Para un cumpleaños recomendamos un ramo natural en colores alegres. Elige el tuyo:',
+      url: ENLACES.flores.naturales || ENLACES.floresNaturales || ENLACES.catalogoGeneral,
+      etiquetaBoton: 'Elegir ramo de cumpleaños →'
+    });
+  }
+  if (texto === '3.2') {
+    return respuestaConEnlace({
+      texto: '💕 Tenemos una sección especial para regalos románticos:',
+      url: ENLACES.sanValentin,
+      etiquetaBoton: 'Ver regalos románticos →'
+    });
+  }
+  if (texto === '3.3') {
+    return respuestaConEnlace({
+      texto: '💐 Selección preparada con cariño para el Día de la Madre:',
+      url: ENLACES.diaDeLaMadre,
+      etiquetaBoton: 'Ver Día de la Madre →'
+    });
+  }
+  if (texto === '3.4') {
+    session.estadoActual = 'escalado_humano';
+    return {
+      messages: [
+        'Lo sentimos mucho 🤍',
+        'Para arreglos de condolencias preferimos atenderte personalmente para asegurar el tono y la entrega correctos.',
+        'Te paso con nuestro equipo, te atenderán en breve por WhatsApp.'
+      ],
+      options: [
+        { id: 'whatsapp', label: 'Abrir WhatsApp →', url: ENLACES.whatsapp, tipo: 'externo' },
+        { id: 'menu', label: '← Volver' }
+      ],
+      estado: session.estadoActual
+    };
+  }
+  if (texto === '3.5') {
+    return respuestaConEnlace({
+      texto:
+        '🌿 Un detalle sin motivo es siempre el mejor motivo. Nuestra selección de novedades:',
+      url: ENLACES.novedades,
+      etiquetaBoton: 'Ver novedades →'
+    });
+  }
+  return mensajeNoEntendido();
+}
+
+// Nuevo: INFO
+function manejarSubmenuInfo(session, texto) {
+  if (texto === '6.1') {
+    return {
+      messages: [
+        '🚚 ENVÍOS A DOMICILIO',
+        '\n' +
+          '• Castellón y Grao: 11 €\n' +
+          '• Almazora: 15 €\n' +
+          '• Villarreal: 18 €\n' +
+          '• Burriana: 18 €\n' +
+          '• Benicàssim: 20 €\n' +
+          "• L'Alcora: 28 €\n" +
+          '• Oropesa del Mar: 33 €\n',
+        'Envío en el mismo día si pides antes de las 12:00.',
+        '¿Quieres comprar ya?'
+      ],
+      options: [
+        { id: 'catalogo', label: 'Ver tienda online →', url: ENLACES.catalogoGeneral, tipo: 'externo' },
+        { id: 'menu', label: '← Volver' }
+      ],
+      estado: session.estadoActual
+    };
+  }
+  if (texto === '6.2') {
+    return {
+      messages: [
+        '🕐 HORARIOS Y UBICACIÓN',
+        '\n' +
+          'Atelier principal:\n' +
+          'Lunes a sábado: 9:30 - 14:00 / 17:00 - 20:30\n' +
+          'Domingos: cerrado\n\n' +
+          '📍 Castellón de la Plana\n' +
+          '☎️ +34 964 205 102\n'
+      ],
+      options: [ { id: 'menu', label: '← Volver al menú' } ],
+      estado: session.estadoActual
+    };
+  }
+  if (texto === '6.3') {
+    return {
+      messages: [
+        '📱 Contacta con nosotros directamente:',
+        '\n' +
+          'WhatsApp: +34 692 139 016\n' +
+          'Email: info@espaivegetal.com\n' +
+          'Instagram: @espaivegetal\n'
+      ],
+      options: [
+        { id: 'whatsapp', label: 'Abrir WhatsApp →', url: ENLACES.whatsapp, tipo: 'externo' },
+        { id: 'menu', label: '← Volver' }
+      ],
+      estado: session.estadoActual
+    };
+  }
   return mensajeNoEntendido();
 }
 
@@ -496,12 +686,17 @@ function manejarSubmenuEnvios(session, texto) {
 
 function manejarEscaladoHumano(session, texto) {
   // Texto libre, mantenemos estado y damos acuse
+  try { session.historial.push({ t: new Date().toISOString(), m: texto }); } catch (e) {}
+  notificarAlEquipo({ sessionId: session.sessionId, mensaje: texto });
   return {
     messages: [
-      'Mensaje recibido. Un miembro del equipo te respondera en breve.',
-      'Escribe "menu" para volver al menu principal cuando quieras.'
+      'Mensaje recibido ✓',
+      "Un miembro del equipo te responderá en breve. Si quieres volver al menú automático, escribe 'menu'."
     ],
-    options: [ { id: 'menu', label: 'Volver al menu principal' } ],
+    options: [
+      { id: 'whatsapp', label: 'Abrir WhatsApp →', url: ENLACES.whatsapp, tipo: 'externo' },
+      { id: 'menu', label: '← Volver al menú' }
+    ],
     estado: session.estadoActual
   };
 }
@@ -520,6 +715,9 @@ function procesarMensaje(session, mensaje) {
     session.estadoActual = 'despedida';
     return respuestaDespedida();
   }
+  if (['ayuda'].includes(texto)) {
+    return respuestaAyuda();
+  }
 
   // ENRUTAMIENTO POR ESTADO
   switch (session.estadoActual) {
@@ -527,10 +725,16 @@ function procesarMensaje(session, mensaje) {
       return manejarMenuPrincipal(session, texto);
     case 'ramo_submenu':
       return manejarSubmenuRamo(session, texto);
+    case 'flores_submenu':
+      return manejarSubmenuFlores(session, texto);
+    case 'regalo_submenu':
+      return manejarSubmenuRegalo(session, texto);
     case 'ramo_pregunta_presupuesto':
       return manejarPresupuestoRamo(session, texto);
     case 'ramo_pregunta_entrega':
       return manejarEntregaRamo(session, texto);
+    case 'info_submenu':
+      return manejarSubmenuInfo(session, texto);
     case 'bodas_pregunta_fecha':
       return manejarFechaBoda(session, texto);
     case 'bodas_pregunta_invitados':
