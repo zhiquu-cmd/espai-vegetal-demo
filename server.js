@@ -46,19 +46,24 @@ function getSession(sessionId) {
 // ---------------------------------------------------------------
 const MENU_PRINCIPAL = {
   text:
-    "Como podemos ayudarte hoy? Elige una opcion escribiendo su numero:\n\n" +
-    "1. Ramos personalizados\n" +
-    "2. Bodas y eventos\n" +
-    "3. Interiorismo vegetal\n" +
-    "4. Envios y reparto\n" +
-    "5. Hablar con una persona",
+    "¿En qué podemos ayudarte? Elige una opción:",
   options: [
-    { id: '1', label: 'Ramos personalizados' },
+    { id: '1', label: 'Ramo o regalo' },
     { id: '2', label: 'Bodas y eventos' },
-    { id: '3', label: 'Interiorismo vegetal' },
-    { id: '4', label: 'Envios y reparto' },
-    { id: '5', label: 'Hablar con una persona' }
-  ]
+    { id: '3', label: 'Plantas' },
+    { id: '4', label: 'Envíos' },
+    { id: '5', label: 'Horarios y contacto' },
+    { id: '6', label: 'Hablar con el equipo' }
+  ],
+  long:
+    "\n" +
+    "1️⃣  Encargar un ramo o regalo\n" +
+    "2️⃣  Bodas y eventos\n" +
+    "3️⃣  Plantas e interiorismo botánico\n" +
+    "4️⃣  Envíos a domicilio\n" +
+    "5️⃣  Horarios, ubicación y contacto\n" +
+    "6️⃣  Hablar con Susana o el equipo\n\n" +
+    "Escribe el número o pulsa un botón."
 };
 
 // Textos reutilizables
@@ -90,7 +95,10 @@ function limpiar(texto) {
 // Respuestas de conveniencia
 function respuestaMenuPrincipal() {
   return {
-    messages: [MENU_PRINCIPAL.text],
+    messages: [
+      MENU_PRINCIPAL.text,
+      MENU_PRINCIPAL.long
+    ],
     options: MENU_PRINCIPAL.options,
     estado: 'menu_principal'
   };
@@ -197,7 +205,17 @@ function manejarMenuPrincipal(session, texto) {
     };
   }
 
-  if (['5', 'persona', 'agente', 'hablar'].includes(texto)) {
+  if (['5', 'horarios', 'ubicacion', 'ubicación', 'direccion', 'dirección', 'telefono', 'teléfono', 'contacto'].includes(texto)) {
+    return {
+      messages: [INFO_ATELIER],
+      options: [
+        { id: 'menu', label: 'Volver al menu principal' }
+      ],
+      estado: 'info_atelier'
+    };
+  }
+
+  if (['6', 'persona', 'agente', 'hablar', 'equipo', 'susana'].includes(texto)) {
     session.estadoActual = 'escalado_humano';
     return {
       messages: [
@@ -208,17 +226,6 @@ function manejarMenuPrincipal(session, texto) {
         { id: 'menu', label: 'Volver al menu principal' }
       ],
       estado: session.estadoActual
-    };
-  }
-
-  // atajos utiles
-  if (['horarios', 'ubicacion', 'direccion', 'telefono'].includes(texto)) {
-    return {
-      messages: [INFO_ATELIER],
-      options: [
-        { id: 'menu', label: 'Volver al menu principal' }
-      ],
-      estado: 'info_atelier'
     };
   }
 
@@ -524,9 +531,10 @@ app.post('/start', (req, res) => {
   const session = getSession(sessionId);
   session.estadoActual = 'menu_principal';
 
+  const menu = respuestaMenuPrincipal();
   res.json({
-    messages: [BIENVENIDA.text, MENU_PRINCIPAL.text],
-    options: MENU_PRINCIPAL.options,
+    messages: [BIENVENIDA.text, ...menu.messages],
+    options: menu.options,
     estado: session.estadoActual
   });
 });
