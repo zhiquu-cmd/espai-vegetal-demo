@@ -31,8 +31,14 @@ function addBubble(text, who) {
 
 // Convierte saltos de linea, marca títulos en mayusculas y resalta numeros
 function formatText(text) {
+  // Linkificar URLs simples (http/https)
+  const linkified = (text || '').replace(/\bhttps?:\/\/[^\s]+/gi, (url) => {
+    const safe = url.replace(/"/g, '');
+    return `<a href="${safe}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+  });
+
   // Resaltar lineas que parecen titulos (todo mayusculas) en color botanico
-  return text
+  return linkified
     .split('\n')
     .map(line => {
       if (/^[A-ZÑÁÉÍÓÚ\s]+$/.test(line.trim()) && line.trim().length > 3) {

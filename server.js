@@ -76,6 +76,24 @@ const INFO_ATELIER =
   "Tienda Plaza Santa Clara abierta tambien por las mañanas.\n\n" +
   "Telefono: +34 964 205 102";
 
+// Centralizamos todas las URLs aqui para editarlas facil
+const ENLACES = {
+  catalogoGeneral: "https://espaivegetal.com",
+  flores: {
+    naturales: "https://espaivegetal.com/12-natural",
+    secas: "https://espaivegetal.com/13-seco",
+    artificiales: "https://espaivegetal.com/14-artificial"
+  },
+  plantas: "https://espaivegetal.com/19-plantas",
+  accesorios: "https://espaivegetal.com/31-accesorios",
+  sanValentin: "https://espaivegetal.com/75-flores-san-valentin",
+  diaDeLaMadre: "https://espaivegetal.com/54-dia-de-la-madre",
+  novedades: "https://espaivegetal.com/novedades",
+  masVendidos: "https://espaivegetal.com/mas-vendidos",
+  ofertas: "https://espaivegetal.com/productos-rebajados",
+  whatsapp: "https://wa.me/34692139016"
+};
+
 const BIENVENIDA = {
   text:
     "Hola, bienvenido a Espai Vegetal.\n" +
@@ -152,7 +170,11 @@ function respuestaEnvios() {
 
 function respuestaHorarios() {
   return {
-    messages: [INFO_ATELIER],
+    messages: [
+      INFO_ATELIER,
+      `Web: ${ENLACES.catalogoGeneral}`,
+      `WhatsApp: ${ENLACES.whatsapp}`
+    ],
     options: [ { id: 'menu', label: 'Volver al menu principal' } ],
     estado: 'menu_principal'
   };
@@ -217,7 +239,8 @@ function manejarMenuPrincipal(session, texto) {
         '\n' +
           '3.1  Plantas para regalar\n' +
           '3.2  Plantas para mi hogar\n' +
-          '3.3  Proyecto de interiorismo (hotel, restaurante, oficina)\n'
+          '3.3  Proyecto de interiorismo (hotel, restaurante, oficina)\n',
+        `Catálogo de plantas: ${ENLACES.plantas} · Accesorios: ${ENLACES.accesorios}`
       ],
       options: [
         { id: '3.1', label: 'Para regalar' },
@@ -269,7 +292,8 @@ function manejarSubmenuRamo(session, texto) {
           'A) 35-50 €  (ramo pequeño)\n' +
           'B) 50-80 €  (ramo mediano)\n' +
           'C) 80-150 € (ramo grande)\n' +
-          'D) Sin límite, quiero algo especial\n'
+          'D) Sin límite, quiero algo especial\n',
+        `También puedes ver el catálogo: Naturales ${ENLACES.flores.naturales} · Secas ${ENLACES.flores.secas} · Artificiales ${ENLACES.flores.artificiales}`
       ],
       options: [
         { id: 'A', label: '35-50 €' },
