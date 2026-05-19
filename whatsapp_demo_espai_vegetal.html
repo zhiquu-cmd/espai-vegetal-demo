@@ -75,15 +75,15 @@
         max-width: 880px;
         display: grid;
         grid-template-columns: 1fr;
-        gap: 16px;
+        gap: 20px;
       }
 
       .header {
         display: flex; align-items: center; gap: 10px;
-        color: var(--ink-soft);
-        font-size: 13px;
+        color: var(--ink);
+        font-size: 22px; font-weight: 600; letter-spacing: .2px;
       }
-      .brand-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 0 4px rgba(37,211,102,0.14); }
+      .brand-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 0 6px rgba(37,211,102,0.14); }
 
       .controls {
         display:flex; gap:8px; flex-wrap:wrap; align-items:center;
@@ -102,7 +102,8 @@
       .sc-btn:active, #reset-btn:active, #play-btn:active { transform: translateY(1px); }
       .sc-active { background: var(--color-background-info) !important; color: var(--color-text-info) !important; border-color: var(--color-border-info) !important; }
 
-      #play-btn { width: 100%; border-radius: 14px; padding: 10px 14px; background: linear-gradient(180deg, rgba(37,211,102,0.2), rgba(37,211,102,0.08)); border-color: rgba(37,211,102,0.35); }
+      #play-btn { width: 100%; border-radius: 14px; padding: 10px 14px; background: linear-gradient(180deg, rgba(37,211,102,0.28), rgba(37,211,102,0.10)); border-color: rgba(37,211,102,0.45); box-shadow: 0 6px 18px rgba(37,211,102,0.15); }
+      #play-btn:hover { background: linear-gradient(180deg, rgba(37,211,102,0.32), rgba(37,211,102,0.14)); }
       #play-btn:disabled { opacity: .7; cursor: default; }
 
       #phone-frame {
@@ -124,7 +125,8 @@
       .composer { background:#F0F0F0; padding:8px 10px; display:flex; gap:8px; align-items:center; border-radius:0 0 16px 16px; margin-top:2px; }
       .composer-placeholder { flex:1; background:#fff; border-radius:18px; padding:8px 12px; font-size:13px; color:#7d8a91; }
 
-      #action-panel { margin-top:1rem; padding:12px; background:var(--color-background-secondary); border-radius: var(--radius-md); font-size:13px; color:var(--color-text-secondary); text-align:center; }
+      /* Action panel: sutil cristal para premium feel */
+      #action-panel { margin-top:1rem; padding:12px; background:var(--color-background-secondary); border-radius: var(--radius-md); font-size:13px; color:var(--color-text-secondary); text-align:center; border:1px solid var(--border); backdrop-filter: saturate(1.2) blur(6px); }
 
       /* Existing components with small polish */
       .msg-bot, .msg-user { max-width:78%; padding: 8px 11px 6px; border-radius: 10px; font-size: 13px; line-height: 1.45; color: #111; position: relative; word-wrap: break-word; }
@@ -163,7 +165,7 @@
     <div class="page">
       <div class="shell">
         <div>
-          <div class="header"><span class="brand-dot"></span> Demo asistente de WhatsApp para Espai Vegetal</div>
+          <div class="header"><span class="brand-dot"></span> Demo WhatsApp · Espai Vegetal</div>
           <div class="controls" style="margin-top:10px;">
             <button id="sc-1" class="sc-btn sc-active">Escenario 1 · Pedido</button>
             <button id="sc-2" class="sc-btn">Escenario 2 · Consulta FAQ</button>
