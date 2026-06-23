@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Demo WhatsApp · Espai Vegetal</title>
+    <meta name="description" content="Simulación interactiva del asistente de WhatsApp de Espai Vegetal con escenarios de pedido, FAQs y urgencias." />
+    <meta name="theme-color" content="#0c141a" />
+
+    <!-- Open Graph / WhatsApp preview -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Demo WhatsApp · Espai Vegetal" />
+    <meta property="og:description" content="Prueba cómo sería la atención por WhatsApp: pedido guiado, consultas y urgencias." />
+    <meta property="og:url" content="https://zhiquu-cmd.github.io/espai-vegetal-demo/whatsapp_demo_espai_vegetal.html" />
+    <meta property="og:image" content="https://dummyimage.com/1200x630/111b21/25D366.png&text=Espai%20Vegetal%20%E2%80%A2%20WhatsApp%20Demo" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Icons font (Tabler Icons) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+
+    <!-- Premium font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
+
+    <style>
+      :root {
+        --bg: #0c141a;
+        --bg-elev: #111b21;
+        --bg-soft: #0f1a21;
+        --brand: #25D366;
+        --brand-ink: #075E54;
+        --ink: #e6eef2;
+        --ink-soft: #a3b1b7;
+        --border: rgba(255,255,255,0.08);
+        --shadow: 0 10px 30px rgba(0,0,0,0.35);
+        --radius-lg: 20px;
+        --radius-md: 14px;
+        --radius-sm: 10px;
+        /* Backwards-compat for existing vars */
+        --color-border-tertiary: var(--border);
+        --color-background-secondary: rgba(255,255,255,0.04);
+        --color-text-secondary: var(--ink-soft);
+        --color-text-primary: var(--ink);
+        --color-background-info: rgba(37,211,102,0.14);
+        --color-text-info: #1faa59;
+        --color-border-info: rgba(37,211,102,0.35);
+        --color-text-success: #1db954;
+      }
+
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(1200px 600px at 80% -10%, rgba(37,211,102,0.10), transparent 60%),
+          radial-gradient(900px 500px at -10% 110%, rgba(117,111,255,0.10), transparent 60%),
+          var(--bg);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      .page {
+        min-height: 100%;
+        display: grid;
+        place-items: center;
+        padding: 32px 16px;
+      }
+
+      .shell {
+        width: 100%;
+        max-width: 880px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+
+      .header {
+        display: flex; align-items: center; gap: 10px;
+        color: var(--ink);
+        font-size: 22px; font-weight: 600; letter-spacing: .2px;
+      }
+      .brand-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 0 6px rgba(37,211,102,0.14); }
+
+      .controls {
+        display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+      }
+      .spacer { flex: 1; }
+
+      .sc-btn, #reset-btn, #play-btn {
+        -webkit-tap-highlight-color: transparent;
+        appearance: none; border: 1px solid var(--border);
+        color: var(--ink); background: rgba(255,255,255,0.03);
+        padding: 8px 12px; border-radius: 999px; font-size: 12px; font-weight: 500;
+        transition: background .2s ease, border-color .2s ease, transform .02s ease;
+        cursor: pointer;
+      }
+      .sc-btn:hover, #reset-btn:hover, #play-btn:hover { background: rgba(255,255,255,0.06); }
+      .sc-btn:active, #reset-btn:active, #play-btn:active { transform: translateY(1px); }
+      .sc-active { background: var(--color-background-info) !important; color: var(--color-text-info) !important; border-color: var(--color-border-info) !important; }
+
+      #play-btn { width: 100%; border-radius: 14px; padding: 10px 14px; background: linear-gradient(180deg, rgba(37,211,102,0.28), rgba(37,211,102,0.10)); border-color: rgba(37,211,102,0.45); box-shadow: 0 6px 18px rgba(37,211,102,0.15); }
+      #play-btn:hover { background: linear-gradient(180deg, rgba(37,211,102,0.32), rgba(37,211,102,0.14)); }
+      #play-btn:disabled { opacity: .7; cursor: default; }
+
+      #phone-frame {
+        max-width: 380px; margin: 0 auto; background: var(--bg-elev);
+        border-radius: 24px; padding: 8px; border: 1px solid var(--color-border-tertiary);
+        box-shadow: var(--shadow);
+      }
+      .phone-top {
+        background: var(--brand-ink); color:#fff; padding:10px 14px; border-radius:16px 16px 4px 4px;
+        display:flex; align-items:center; gap:10px;
+      }
+      .avatar { width:36px; height:36px; border-radius:50%; background: var(--brand); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:14px; color:#fff; letter-spacing:.5px; }
+      .chat-title { font-size:14px; font-weight:600; }
+      .chat-sub { font-size:11px; opacity:0.9; }
+      .phone-toolbar { font-size:18px; opacity:0.85; }
+
+      #chat-area { background:#ECE5DD; min-height:480px; max-height:560px; overflow-y:auto; padding:12px 10px; display:flex; flex-direction:column; gap:6px; border-radius:0 0 16px 16px; }
+
+      .composer { background:#F0F0F0; padding:8px 10px; display:flex; gap:8px; align-items:center; border-radius:0 0 16px 16px; margin-top:2px; }
+      .composer-placeholder { flex:1; background:#fff; border-radius:18px; padding:8px 12px; font-size:13px; color:#7d8a91; }
+
+      /* Action panel: sutil cristal para premium feel */
+      #action-panel { margin-top:1rem; padding:12px; background:var(--color-background-secondary); border-radius: var(--radius-md); font-size:13px; color:var(--color-text-secondary); text-align:center; border:1px solid var(--border); backdrop-filter: saturate(1.2) blur(6px); }
+
+      /* Existing components with small polish */
+      .msg-bot, .msg-user { max-width:78%; padding: 8px 11px 6px; border-radius: 10px; font-size: 13px; line-height: 1.45; color: #111; position: relative; word-wrap: break-word; }
+      .msg-bot { background: #fff; align-self: flex-start; border-top-left-radius: 3px; }
+      .msg-user { background: #DCF8C6; align-self: flex-end; border-top-right-radius: 3px; }
+      .msg-time { font-size:10px; color:#667781; text-align:right; margin-top:4px; }
+      .msg-time .ti { font-size:12px; color:#4FC3F7; vertical-align:-2px; margin-left:2px; }
+      .typing { background:#fff; align-self:flex-start; padding:10px 14px; border-radius:8px; border-top-left-radius:3px; display:inline-flex; gap:3px; }
+      .typing span { width:6px; height:6px; background:#B0B0B0; border-radius:50%; display:inline-block; animation: tdot 1.2s infinite; }
+      .typing span:nth-child(2) { animation-delay: .2s }
+      .typing span:nth-child(3) { animation-delay: .4s }
+      @keyframes tdot { 0%,60%,100% { transform: translateY(0); opacity:.4 } 30% { transform: translateY(-4px); opacity: 1 } }
+      .quick-replies { display:flex; flex-wrap:wrap; gap:6px; align-self:flex-start; max-width:78%; margin-top:2px; }
+      .qr-btn { background:#fff; border: 1px solid #e4e4e4; color:#075E54; padding:6px 12px; font-size:12px; border-radius: 16px; cursor:pointer; font-family: inherit; transition: background .15s ease, border-color .15s ease; }
+      .qr-btn:hover { background:#f7faf7; border-color:#d7e6d7; }
+      .product-card { background:#fff; border-radius:10px; padding:10px; max-width:78%; align-self:flex-start; border-top-left-radius:3px; }
+      .product-card .pc-img { background: linear-gradient(135deg, #f4c0d1 0%, #ed93b1 100%); border-radius:8px; height:96px; display:flex; align-items:center; justify-content:center; font-size:30px; color:#fff; margin-bottom:8px; }
+      .product-card .pc-title { font-size:13px; font-weight:600; color:#111; margin-bottom:2px; }
+      .product-card .pc-desc { font-size:11.5px; color:#555; line-height:1.35; margin-bottom:4px; }
+      .product-card .pc-price { font-size:13px; font-weight:600; color:#075E54; }
+      .location-card { background:#fff; border-radius:10px; padding:10px; max-width:78%; align-self:flex-start; border-top-left-radius:3px; }
+      .location-card .lc-map { background:#d4e4d4; border-radius:8px; height:80px; display:flex; align-items:center; justify-content:center; margin-bottom:6px; color:#4a6b4a; }
+      .summary-card { background:#fff; border-radius:10px; padding:12px 14px; max-width:85%; align-self:flex-start; border-top-left-radius:3px; border-left:3px solid #25D366; }
+      .summary-card .sc-title { font-size:13px; font-weight:600; color:#075E54; margin-bottom:8px; }
+      .summary-card .sc-row { display:flex; justify-content:space-between; font-size:12px; padding:3px 0; color:#333; }
+      .summary-card .sc-total { border-top: 1px dashed #ddd; margin-top:6px; padding-top:6px; font-weight:600; }
+      #chat-area::-webkit-scrollbar { width: 4px; }
+      #chat-area::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 2px; }
+
+      @media (min-width: 860px) {
+        .shell { grid-template-columns: 1fr 380px; align-items: start; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="shell">
+        <div>
+          <div class="header"><span class="brand-dot"></span> Demo WhatsApp · Espai Vegetal</div>
+          <div class="controls" style="margin-top:10px;">
+            <button id="sc-1" class="sc-btn sc-active">Escenario 1 · Pedido</button>
+            <button id="sc-2" class="sc-btn">Escenario 2 · Consulta FAQ</button>
+            <button id="sc-3" class="sc-btn">Escenario 3 · Urgencia</button>
+            <span class="spacer"></span>
+            <button id="reset-btn"><i class="ti ti-refresh" style="font-size:14px; vertical-align:-2px; margin-right:4px" aria-hidden="true"></i>Reiniciar</button>
+          </div>
+
+          <div id="action-panel">
+            Pulsa <strong style="color:var(--color-text-primary)">Iniciar</strong> para arrancar la conversación
+          </div>
+
+          <button id="play-btn" style="margin-top:8px;">
+            <i class="ti ti-player-play" style="font-size:14px; vertical-align:-2px; margin-right:4px" aria-hidden="true"></i>Iniciar conversación
+          </button>
+        </div>
+
+        <div>
+          <div id="phone-frame">
+            <div class="phone-top">
+              <div class="avatar">EV</div>
+              <div style="flex:1;">
+                <div class="chat-title">Espai Vegetal</div>
+                <div class="chat-sub" id="status-line">en línea</div>
+              </div>
+              <i class="ti ti-phone phone-toolbar" aria-hidden="true"></i>
+              <i class="ti ti-dots-vertical phone-toolbar" aria-hidden="true"></i>
+            </div>
+
+            <div id="chat-area"></div>
+
+            <div class="composer">
+              <i class="ti ti-mood-smile" style="font-size:20px; color:#7d8a91;" aria-hidden="true"></i>
+              <div class="composer-placeholder">Escribe un mensaje</div>
+              <i class="ti ti-microphone" style="font-size:20px; color:#7d8a91;" aria-hidden="true"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    (function() {
+      const chat = document.getElementById('chat-area');
+      const playBtn = document.getElementById('play-btn');
+      const actionPanel = document.getElementById('action-panel');
+      const statusLine = document.getElementById('status-line');
+
+      let currentScenario = 1;
+      let stepIndex = 0;
+      let playing = false;
+
+      const scenarios = {
+        1: [
+          { type: 'bot', text: '¡Hola! 🌿 Soy el asistente de Espai Vegetal. ¿En qué puedo ayudarte hoy?', delay: 600 },
+          { type: 'quick', options: ['Hacer un pedido', 'Ver catálogo', 'Estado de mi pedido', 'Hablar con humano'], pick: 0, delay: 1200 },
+          { type: 'user', text: 'Hacer un pedido', delay: 400 },
+          { type: 'bot', text: '¡Perfecto! Cuéntame, ¿es para una ocasión especial? Así te recomiendo lo mejor.', delay: 1400 },
+          { type: 'quick', options: ['Cumpleaños', 'Aniversario', 'Día de la madre', 'Sin motivo, regalo bonito'], pick: 1, delay: 1400 },
+          { type: 'user', text: 'Aniversario', delay: 400 },
+          { type: 'bot', text: '¡Qué bonito! 💐 ¿Tienes un presupuesto orientativo en mente?', delay: 1300 },
+          { type: 'quick', options: ['Hasta 30€', '30-50€', '50-80€', 'Sin límite'], pick: 1, delay: 1300 },
+          { type: 'user', text: '30-50€', delay: 400 },
+          { type: 'bot', text: 'Te propongo tres opciones que encajan perfecto. Mira:', delay: 1500 },
+          { type: 'product', title: 'Ramo Pink Lady', desc: 'Gerberas, rosa ramificada, estática y limonium', price: '35,00 €', icon: 'flower', delay: 1800 },
+          { type: 'product', title: 'Ramo Susurro', desc: 'Rosas rojas y eucalipto, en papel kraft', price: '42,00 €', icon: 'rose', delay: 600 },
+          { type: 'product', title: 'Anthurium rosa', desc: 'Planta en cesto, dura meses', price: '45,00 €', icon: 'plant', delay: 600 },
+          { type: 'quick', options: ['Pink Lady', 'Susurro', 'Anthurium', 'Más opciones'], pick: 0, delay: 1400 },
+          { type: 'user', text: 'Pink Lady', delay: 400 },
+          { type: 'bot', text: 'Excelente elección. ¿A qué población lo enviamos? Trabajamos en estas zonas:', delay: 1400 },
+          { type: 'bot', text: '📍 Castellón / Grao — 11€\n📍 Almazora — 15€\n📍 Villarreal / Burriana — 18€\n📍 Benicàssim — 20€\n📍 L\'Alcora — 28€\n📍 Oropesa del Mar — 33€', delay: 800 },
+          { type: 'user', text: 'Villarreal', delay: 700 },
+          { type: 'bot', text: 'Perfecto. ¿Para qué día lo necesitas?', delay: 1200 },
+          { type: 'quick', options: ['Hoy', 'Mañana', 'Elegir fecha'], pick: 1, delay: 1200 },
+          { type: 'user', text: 'Mañana', delay: 400 },
+          { type: 'bot', text: '¿Quieres añadir una dedicatoria en la tarjeta? (opcional)', delay: 1300 },
+          { type: 'user', text: 'Sí: "10 años contigo, mi amor. Por muchos más."', delay: 900 },
+          { type: 'bot', text: 'Anotado 💌 Por último, ¿me pasas dirección de entrega y teléfono del destinatario?', delay: 1300 },
+          { type: 'user', text: 'C/ Mayor 23, Villarreal. Tel 612345678', delay: 1100 },
+          { type: 'bot', text: 'Aquí tienes el resumen de tu pedido:', delay: 1300 },
+          { type: 'summary', items: [
+              ['Ramo Pink Lady', '35,00 €'],
+              ['Envío a Villarreal', '18,00 €'],
+              ['Tarjeta dedicatoria', 'Incluida'],
+              ['Entrega', 'Mañana, horario comercial']
+            ], total: '53,00 €', delay: 1500 },
+          { type: 'quick', options: ['Confirmar y pagar', 'Modificar algo', 'Cancelar'], pick: 0, delay: 1300 },
+          { type: 'user', text: 'Confirmar y pagar', delay: 400 },
+          { type: 'bot', text: '¡Genial! Te paso el enlace de pago seguro 🔒\nhttps://espaivegetal.com/pago/EV-2847', delay: 1300 },
+          { type: 'bot', text: 'En cuanto recibamos el pago te confirmo y mañana te aviso cuando salga del taller con foto del ramo real. ¿Algo más en lo que pueda ayudarte?', delay: 1200 }
+        ],
+        2: [
+          { type: 'user', text: 'Hola, ¿hacéis envíos a Benicàssim?', delay: 500 },
+          { type: 'bot', text: '¡Hola! 🌿 Sí, llegamos a Benicàssim sin problema.', delay: 1300 },
+          { type: 'bot', text: 'El envío a Benicàssim tiene un coste de 20€ y lo entregamos en horario comercial del día seleccionado, con un margen de 1 día laboral desde la recepción del pago.', delay: 1100 },
+          { type: 'quick', options: ['Quiero hacer un pedido', 'Ver otras zonas', 'Tiempos de entrega', 'Hablar con humano'], pick: 2, delay: 1300 },
+          { type: 'user', text: 'Tiempos de entrega', delay: 400 },
+          { type: 'bot', text: '⏱️ Plazos habituales:\n\n• Castellón / Grao: mismo día si el pedido entra antes de las 13h\n• Resto de poblaciones: 1 día laboral desde el pago confirmado\n• Eventos / bodas: avísanos con 7 días de antelación', delay: 1400 },
+          { type: 'bot', text: '¿Quieres que te ayude a montar un pedido o prefieres ver el catálogo?', delay: 1200 },
+          { type: 'quick', options: ['Montar pedido', 'Ver catálogo', 'No, gracias'], pick: 1, delay: 1200 },
+          { type: 'user', text: 'Ver catálogo', delay: 400 },
+          { type: 'bot', text: 'Aquí tienes nuestras categorías 🌸\n\nhttps://espaivegetal.com\n\n• Natural · Flor fresca de temporada\n• Seco · Flor preservada (dura años)\n• Artificial · Sin mantenimiento\n• Plantas · Para interior y exterior\n\nSi me cuentas para qué es, te recomiendo encantado.', delay: 1500 }
+        ],
+        3: [
+          { type: 'user', text: 'NECESITO un ramo HOY, se me ha olvidado el aniversario 😅', delay: 600 },
+          { type: 'bot', text: 'Tranquilo, te ayudamos 🌹 Son las 11:24h, así que aún llegamos a tiempo si pides antes de las 13h.', delay: 1200 },
+          { type: 'bot', text: '¿Dónde tenemos que entregarlo?', delay: 800 },
+          { type: 'quick', options: ['Castellón / Grao', 'Almazora', 'Villarreal', 'Otra población'], pick: 0, delay: 1300 },
+          { type: 'user', text: 'Castellón / Grao', delay: 400 },
+          { type: 'bot', text: '👍 Castellón mismo día confirmado. Envío 11€.', delay: 1100 },
+          { type: 'bot', text: '¿Cuánto quieres invertir? Te propongo según presupuesto:', delay: 1100 },
+          { type: 'quick', options: ['30€', '50€', '80€', 'Lo mejor que tengas'], pick: 1, delay: 1300 },
+          { type: 'user', text: '50€', delay: 400 },
+          { type: 'bot', text: 'Mi recomendación estrella para hoy:', delay: 1300 },
+          { type: 'product', title: 'Ramo Eterno', desc: '12 rosas rojas premium + verde decorativo, presentado en papel artesanal', price: '50,00 €', icon: 'rose', delay: 1600 },
+          { type: 'bot', text: 'Lo tengo listo en 40 min y sale para reparto. ¿Tiramos? ⚡', delay: 1100 },
+          { type: 'quick', options: ['Sí, vamos', 'Ver otra opción', 'Llamadme'], pick: 0, delay: 1200 },
+          { type: 'user', text: 'Sí, vamos', delay: 400 },
+          { type: 'bot', text: 'Necesito 3 cosas y lo dejamos cerrado:\n\n1️⃣ Dirección y teléfono del destinatario\n2️⃣ Dedicatoria (opcional)\n3️⃣ Tu email para la factura', delay: 1300 },
+          { type: 'user', text: 'C/ Ribalta 12, Castellón. Tel 698765432. "Perdona el despiste, te quiero". maria@email.com', delay: 1500 },
+          { type: 'bot', text: 'Recibido todo 🎯', delay: 800 },
+          { type: 'summary', items: [
+              ['Ramo Eterno (12 rosas)', '50,00 €'],
+              ['Envío Castellón mismo día', '11,00 €'],
+              ['Entrega', 'Hoy, antes de las 18h']
+            ], total: '61,00 €', delay: 1400 },
+          { type: 'bot', text: 'Aquí tu enlace de pago. En cuanto pagues, sale del taller 🚚\nhttps://espaivegetal.com/pago/EV-2851', delay: 1200 },
+          { type: 'bot', text: '¡Vas a quedar como un rey! 👑', delay: 1000 }
+        ]
+      };
+
+      function scrollDown() { chat.scrollTop = chat.scrollHeight; }
+      function now() { const d = new Date(); return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0'); }
+
+      function addTyping() {
+        const t = document.createElement('div');
+        t.className = 'typing';
+        t.id = 'typing-indicator';
+        t.innerHTML = '<span></span><span></span><span></span>';
+        chat.appendChild(t);
+        statusLine.textContent = 'escribiendo…';
+        scrollDown();
+      }
+      function removeTyping() {
+        const t = document.getElementById('typing-indicator');
+        if (t) t.remove();
+        statusLine.textContent = 'en línea';
+      }
+      function addBot(text) {
+        const m = document.createElement('div');
+        m.className = 'msg-bot';
+        m.innerHTML = text.replace(/\n/g, '<br>') + '<div class="msg-time">' + now() + '</div>';
+        chat.appendChild(m);
+        scrollDown();
+      }
+      function addUser(text) {
+        const m = document.createElement('div');
+        m.className = 'msg-user';
+        m.innerHTML = text.replace(/\n/g, '<br>') + '<div class="msg-time">' + now() + ' <i class="ti ti-checks"></i></div>';
+        chat.appendChild(m);
+        scrollDown();
+      }
+      function addQuick(opts, picked) {
+        const wrap = document.createElement('div');
+        wrap.className = 'quick-replies';
+        opts.forEach((o, i) => {
+          const b = document.createElement('button');
+          b.className = 'qr-btn';
+          b.textContent = o;
+          if (i === picked) b.style.background = '#DCF8C6';
+          wrap.appendChild(b);
+        });
+        chat.appendChild(wrap);
+        scrollDown();
+      }
+      function iconFor(name) { if (name === 'rose') return '🌹'; if (name === 'plant') return '🪴'; return '💐'; }
+      function addProduct(p) {
+        const c = document.createElement('div');
+        c.className = 'product-card';
+        c.innerHTML =
+          '<div class="pc-img">' + iconFor(p.icon) + '</div>' +
+          '<div class="pc-title">' + p.title + '</div>' +
+          '<div class="pc-desc">' + p.desc + '</div>' +
+          '<div class="pc-price">' + p.price + '</div>' +
+          '<div class="msg-time">' + now() + '</div>';
+        chat.appendChild(c);
+        scrollDown();
+      }
+      function addSummary(items, total) {
+        const c = document.createElement('div');
+        c.className = 'summary-card';
+        let rows = items.map(([k,v]) => '<div class="sc-row"><span>' + k + '</span><span>' + v + '</span></div>').join('');
+        c.innerHTML =
+          '<div class="sc-title"><i class="ti ti-receipt" style="font-size:14px; vertical-align:-2px; margin-right:4px"></i>Resumen del pedido</div>' +
+          rows +
+          '<div class="sc-row sc-total"><span>Total</span><span>' + total + '</span></div>' +
+          '<div class="msg-time">' + now() + '</div>';
+        chat.appendChild(c);
+        scrollDown();
+      }
+      function clearChat() { chat.innerHTML = ''; stepIndex = 0; }
+      function setScenario(n) {
+        currentScenario = n;
+        document.querySelectorAll('.sc-btn').forEach((b, i) => { b.classList.toggle('sc-active', i === n - 1); });
+        clearChat();
+        playing = false;
+        playBtn.disabled = false;
+        playBtn.innerHTML = '<i class="ti ti-player-play" style="font-size:14px; vertical-align:-2px; margin-right:4px" aria-hidden="true"></i>Iniciar conversación';
+        actionPanel.innerHTML = 'Pulsa <strong style="color:var(--color-text-primary)">Iniciar</strong> para arrancar la conversación';
+      }
+      function playStep() {
+        const steps = scenarios[currentScenario];
+        if (stepIndex >= steps.length) {
+          playing = false;
+          playBtn.disabled = false;
+          playBtn.innerHTML = '<i class="ti ti-refresh" style="font-size:14px; vertical-align:-2px; margin-right:4px" aria-hidden="true"></i>Volver a reproducir';
+          actionPanel.innerHTML = '<i class="ti ti-check" style="font-size:14px; vertical-align:-2px; margin-right:4px; color:var(--color-text-success)" aria-hidden="true"></i>Conversación completada. Prueba otro escenario.';
+          return;
+        }
+        const step = steps[stepIndex];
+        stepIndex++;
+        if (step.type === 'bot' || step.type === 'product' || step.type === 'summary') {
+          setTimeout(() => {
+            addTyping();
+            setTimeout(() => {
+              removeTyping();
+              if (step.type === 'bot') addBot(step.text);
+              else if (step.type === 'product') addProduct(step);
+              else if (step.type === 'summary') addSummary(step.items, step.total);
+              playStep();
+            }, 700);
+          }, step.delay);
+        } else if (step.type === 'user') {
+          setTimeout(() => { addUser(step.text); playStep(); }, step.delay);
+        } else if (step.type === 'quick') {
+          setTimeout(() => { addQuick(step.options, step.pick); playStep(); }, step.delay);
+        }
+      }
+      document.getElementById('sc-1').addEventListener('click', () => setScenario(1));
+      document.getElementById('sc-2').addEventListener('click', () => setScenario(2));
+      document.getElementById('sc-3').addEventListener('click', () => setScenario(3));
+      document.getElementById('reset-btn').addEventListener('click', () => setScenario(currentScenario));
+      playBtn.addEventListener('click', () => {
+        if (playing) return;
+        clearChat();
+        playing = true;
+        playBtn.disabled = true;
+        playBtn.innerHTML = '<i class="ti ti-player-pause" style="font-size:14px; vertical-align:-2px; margin-right:4px" aria-hidden="true"></i>Reproduciendo…';
+        actionPanel.innerHTML = '<i class="ti ti-info-circle" style="font-size:14px; vertical-align:-2px; margin-right:4px" aria-hidden="true"></i>Observa la conversación en tiempo real';
+        playStep();
+      });
+    })();
+    </script>
+  </body>
+</html>
